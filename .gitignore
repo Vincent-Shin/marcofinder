@@ -1,3 +1,15 @@
-backend/.env
+venv/
 backend/venv/
+scraper/venv/
+**/venv/
 __pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+.env
+backend/.env
+scraper/.env
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
