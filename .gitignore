@@ -13,3 +13,4 @@ scraper/.env
 .vscode/
 .DS_Store
 Thumbs.db
+how --name-only c0efe60
