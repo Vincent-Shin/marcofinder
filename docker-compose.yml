@@ -1,0 +1,30 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: macrofinder-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: macrofinder-backend
+    ports:
+      - "5000:5000"
+    environment:
+      MONGO_URI: mongodb://mongo:27017/
+      DB_NAME: macro_finder
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo_data:
