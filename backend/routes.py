@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from db import menu_items
+from ai_helper import generate_category_and_description
 
 api = Blueprint("api", __name__)
 
@@ -40,3 +41,43 @@ def add_item():
 def get_items():
     items = list(menu_items.find({}, {"_id": 0}))
     return jsonify(items)
+
+
+@api.post("/items/fill-missing-details")
+def fill_missing_details():
+    items = list(menu_items.find({
+        "$or": [
+            {"category": None},
+            {"category": {"$exists": False}},
+            {"description": None},
+            {"description": {"$exists": False}}
+        ]
+    }))
+
+    updated_count = 0
+    failed_count = 0
+
+    for item in items:
+        try:
+            result = generate_category_and_description(item)
+
+            menu_items.update_one(
+                {"_id": item["_id"]},
+                {
+                    "$set": {
+                        "category": result["category"],
+                        "description": result["description"]
+                    }
+                }
+            )
+
+            updated_count += 1
+
+        except Exception:
+            failed_count += 1
+
+    return jsonify({
+        "message": "missing item details processed",
+        "updated_count": updated_count,
+        "failed_count": failed_count
+    }), 200

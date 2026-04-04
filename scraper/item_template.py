@@ -18,6 +18,7 @@ def create_empty_item():
             "sodium_mg": None,
             "sugar_g": None
         },
+        "description": None,
         "source_url": None,
         "scraped_at": datetime.utcnow().isoformat()
     }
