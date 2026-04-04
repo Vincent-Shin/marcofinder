@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MacroFinder — Visual Feed Redesign</title>
+    <title>MacroFinder </title>
     <style>
         :root {
             --bg: #f7f7f4;
@@ -154,6 +154,7 @@
             padding: 4px 0 2px;
             scrollbar-width: none;
         }
+
         .chips::-webkit-scrollbar { display: none; }
 
         .chip {
@@ -184,6 +185,7 @@
             padding-bottom: 6px;
             scroll-snap-type: x proximity;
         }
+
         .featured-strip::-webkit-scrollbar { display: none; }
 
         .featured-card,
@@ -223,10 +225,6 @@
 
         .scroll-end-card::before { display: none; }
 
-        .featured-card:nth-child(1) { background-image: url('https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80'); }
-        .featured-card:nth-child(2) { background-image: url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80'); }
-        .featured-card:nth-child(3) { background-image: url('https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=900&q=80'); }
-
         .featured-kicker {
             font-size: 0.76rem;
             text-transform: uppercase;
@@ -240,6 +238,45 @@
             font-weight: 800;
             line-height: 1.08;
             margin-bottom: 6px;
+        }
+
+        .featured-card {
+            min-height: 220px;
+        }
+
+        .featured-title {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .featured-meta {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .food-name {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 2.5em;
+        }
+
+        .restaurant {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mini-note {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
         }
 
         .featured-meta {
@@ -301,13 +338,6 @@
             background-size: cover;
             background-position: center;
         }
-
-        .food-card:nth-child(1) .food-image { background-image: url('https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80'); }
-        .food-card:nth-child(2) .food-image { background-image: url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80'); }
-        .food-card:nth-child(3) .food-image { background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80'); }
-        .food-card:nth-child(4) .food-image { background-image: url('https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=900&q=80'); }
-        .food-card:nth-child(5) .food-image { background-image: url('https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'); }
-        .food-card:nth-child(6) .food-image { background-image: url('https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=900&q=80'); }
 
         .image-badge,
         .save-fab {
@@ -466,7 +496,17 @@
             font-weight: 800;
         }
 
-        .footer-space { height: 24px; }
+        .footer-space {
+            height: 24px;
+        }
+
+        .loading-text,
+        .error-text,
+        .empty-text {
+            color: var(--muted);
+            font-size: 1rem;
+            padding: 12px 0 28px;
+        }
 
         @media (max-width: 980px) {
             .feed { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -495,7 +535,8 @@
         <div class="topbar-actions">
             <button class="icon-btn">🔍</button>
             <button class="pill-btn">Saved</button>
-            <a href="profile.html" class="pill-btn">Profile</a>        </div>
+            <a href="profile.html" class="pill-btn">Profile</a>
+        </div>
     </div>
 </header>
 
@@ -505,7 +546,7 @@
             <div class="search-row">
                 <div class="search-bar">
                     <span>🔎</span>
-                    <input type="text" placeholder="Search restaurant or meal" />
+                    <input type="text" id="search-input" placeholder="Search restaurant or meal" />
                 </div>
                 <button class="icon-btn">⚙️</button>
             </div>
@@ -521,22 +562,8 @@
             </div>
         </div>
 
-        <div class="featured-strip">
-            <article class="featured-card">
-                <div class="featured-kicker">Top picks today</div>
-                <div class="featured-title">Portable high protein</div>
-                <div class="featured-meta">Fast grabs under 450 cal</div>
-            </article>
-            <article class="featured-card">
-                <div class="featured-kicker">Best value</div>
-                <div class="featured-title">Cheap meals that still hit macros</div>
-                <div class="featured-meta">Protein-forward budget picks</div>
-            </article>
-            <article class="featured-card">
-                <div class="featured-kicker">Near you</div>
-                <div class="featured-title">Quick lunch finds</div>
-                <div class="featured-meta">Easy scan, tap, done</div>
-            </article>
+        <div class="featured-strip" id="top-picks-strip">
+            <div class="loading-text">Loading top picks...</div>
         </div>
     </section>
 
@@ -548,38 +575,8 @@
             </div>
         </div>
 
-        <div class="featured-strip">
-            <article class="featured-card">
-                <div class="featured-kicker">Portable high protein</div>
-                <div class="featured-title">Grilled Chicken Wrap</div>
-                <div class="featured-meta">Freshii · $9.49 · 32P · 410 Cal</div>
-            </article>
-            <article class="featured-card">
-                <div class="featured-kicker">Fast grab under 450 cal</div>
-                <div class="featured-title">Greek Yogurt Power Bowl</div>
-                <div class="featured-meta">Starbucks · $7.95 · 21P · 290 Cal</div>
-            </article>
-            <article class="featured-card">
-                <div class="featured-kicker">Highest value protein meal</div>
-                <div class="featured-title">Turkey Club Sandwich</div>
-                <div class="featured-meta">Tim Hortons · $7.49 · 28P · 390 Cal</div>
-            </article>
-            <article class="featured-card">
-                <div class="featured-kicker">Best budget breakfast</div>
-                <div class="featured-title">Egg White Wrap</div>
-                <div class="featured-meta">A&W · $5.99 · 19P · 280 Cal</div>
-            </article>
-            <article class="featured-card">
-                <div class="featured-kicker">Balanced quick lunch</div>
-                <div class="featured-title">Chicken Harvest Salad</div>
-                <div class="featured-meta">Fresh Kitchen · $10.25 · 29P · 360 Cal</div>
-            </article>
-            <article class="scroll-end-card">
-                <div class="featured-kicker" style="color: var(--accent);">Want more?</div>
-                <div class="featured-title" style="color: var(--text);">Browse all featured picks</div>
-                <div class="featured-meta" style="color: var(--muted);">End the row with a clear gallery handoff instead of endless scrolling.</div>
-                <a href="#" class="view-link" style="margin-top: 16px;">See all</a>
-            </article>
+        <div class="featured-strip" id="featured-picks-strip">
+            <div class="loading-text">Loading featured picks...</div>
         </div>
     </section>
 
@@ -591,128 +588,8 @@
             </div>
         </div>
 
-        <div class="featured-strip" style="grid-auto-columns: minmax(280px, 320px);">
-            <article class="food-card">
-                <div class="food-image">
-                    <div class="image-badge">High Protein</div>
-                    <button class="save-fab">♡</button>
-                </div>
-                <div class="food-content">
-                    <div class="food-topline">
-                        <div class="food-name">Grilled Chicken Wrap</div>
-                        <div class="food-price">$9.49</div>
-                    </div>
-                    <div class="restaurant">Freshii</div>
-                    <div class="macro-row">
-                        <div class="macro">32P</div>
-                        <div class="macro">410 Cal</div>
-                        <div class="macro">Good $</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="mini-note">Tap for full nutrition.</div>
-                        <a class="view-link" href="#">Details</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image">
-                    <div class="image-badge">Budget</div>
-                    <button class="save-fab">♡</button>
-                </div>
-                <div class="food-content">
-                    <div class="food-topline">
-                        <div class="food-name">Turkey Club Sandwich</div>
-                        <div class="food-price">$7.49</div>
-                    </div>
-                    <div class="restaurant">Tim Hortons</div>
-                    <div class="macro-row">
-                        <div class="macro">28P</div>
-                        <div class="macro">390 Cal</div>
-                        <div class="macro">Best $</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="mini-note">Restaurant always visible.</div>
-                        <a class="view-link" href="#">Details</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image">
-                    <div class="image-badge">Gym Pick</div>
-                    <button class="save-fab">♡</button>
-                </div>
-                <div class="food-content">
-                    <div class="food-topline">
-                        <div class="food-name">Double Chicken Bowl</div>
-                        <div class="food-price">$11.75</div>
-                    </div>
-                    <div class="restaurant">Chipotle</div>
-                    <div class="macro-row">
-                        <div class="macro">48P</div>
-                        <div class="macro">620 Cal</div>
-                        <div class="macro">Filling</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="mini-note">Big meal, easy scan.</div>
-                        <a class="view-link" href="#">Details</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image">
-                    <div class="image-badge">Portable</div>
-                    <button class="save-fab">♡</button>
-                </div>
-                <div class="food-content">
-                    <div class="food-topline">
-                        <div class="food-name">Greek Yogurt Protein Box</div>
-                        <div class="food-price">$6.95</div>
-                    </div>
-                    <div class="restaurant">Starbucks</div>
-                    <div class="macro-row">
-                        <div class="macro">20P</div>
-                        <div class="macro">270 Cal</div>
-                        <div class="macro">Quick</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="mini-note">Great grab-and-go option.</div>
-                        <a class="view-link" href="#">Details</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image">
-                    <div class="image-badge">Strong Value</div>
-                    <button class="save-fab">♡</button>
-                </div>
-                <div class="food-content">
-                    <div class="food-topline">
-                        <div class="food-name">Roasted Chicken Pita</div>
-                        <div class="food-price">$8.15</div>
-                    </div>
-                    <div class="restaurant">Pita Pit</div>
-                    <div class="macro-row">
-                        <div class="macro">31P</div>
-                        <div class="macro">430 Cal</div>
-                        <div class="macro">Great $</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="mini-note">Underrated protein pick.</div>
-                        <a class="view-link" href="#">Details</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="scroll-end-card">
-                <div class="featured-kicker" style="color: var(--accent);">End of row</div>
-                <div class="featured-title" style="color: var(--text);">See all protein-value meals</div>
-                <div class="featured-meta" style="color: var(--muted);">Open the gallery for denser browsing and sorting.</div>
-                <a href="#" class="view-link" style="margin-top: 16px;">See all</a>
-            </article>
+        <div class="featured-strip" style="grid-auto-columns: minmax(280px, 320px);" id="protein-value-strip">
+            <div class="loading-text">Loading protein value picks...</div>
         </div>
     </section>
 
@@ -724,73 +601,8 @@
             </div>
         </div>
 
-        <div class="featured-strip" style="grid-auto-columns: minmax(260px, 300px);">
-            <article class="food-card">
-                <div class="food-image" style="aspect-ratio: 1 / 0.68; background-image: url('https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1200&q=80');">
-                    <div class="image-badge">Healthy Fast Casual</div>
-                </div>
-                <div class="food-content">
-                    <div class="food-name">Freshii</div>
-                    <div class="restaurant">27 items tracked</div>
-                    <div class="macro-row"><div class="macro">Top pick: 34P &lt; $10</div></div>
-                    <div class="card-footer"><div class="mini-note">Strong protein-value options.</div><a class="view-link" href="#">Browse</a></div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image" style="aspect-ratio: 1 / 0.68; background-image: url('https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?auto=format&fit=crop&w=1200&q=80');">
-                    <div class="image-badge">Coffee + Quick Meals</div>
-                </div>
-                <div class="food-content">
-                    <div class="food-name">Tim Hortons</div>
-                    <div class="restaurant">42 items tracked</div>
-                    <div class="macro-row"><div class="macro">Top pick: 28P for $7.49</div></div>
-                    <div class="card-footer"><div class="mini-note">Budget breakfast leaders.</div><a class="view-link" href="#">Browse</a></div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image" style="aspect-ratio: 1 / 0.68; background-image: url('https://images.unsplash.com/photo-1513639776629-7b61b0ac49cb?auto=format&fit=crop&w=1200&q=80');">
-                    <div class="image-badge">Bowls + Burritos</div>
-                </div>
-                <div class="food-content">
-                    <div class="food-name">Chipotle</div>
-                    <div class="restaurant">24 items tracked</div>
-                    <div class="macro-row"><div class="macro">Top pick: 48P bowl</div></div>
-                    <div class="card-footer"><div class="mini-note">Customizable high-protein meals.</div><a class="view-link" href="#">Browse</a></div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image" style="aspect-ratio: 1 / 0.68; background-image: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1200&q=80');">
-                    <div class="image-badge">Healthy Bowls</div>
-                </div>
-                <div class="food-content">
-                    <div class="food-name">Fresh Kitchen</div>
-                    <div class="restaurant">19 items tracked</div>
-                    <div class="macro-row"><div class="macro">Top pick: 29P at 360 Cal</div></div>
-                    <div class="card-footer"><div class="mini-note">Balanced lighter options.</div><a class="view-link" href="#">Browse</a></div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image" style="aspect-ratio: 1 / 0.68; background-image: url('https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&w=1200&q=80');">
-                    <div class="image-badge">Quick + Portable</div>
-                </div>
-                <div class="food-content">
-                    <div class="food-name">Starbucks</div>
-                    <div class="restaurant">30 items tracked</div>
-                    <div class="macro-row"><div class="macro">Top pick: 20P under $7</div></div>
-                    <div class="card-footer"><div class="mini-note">Portable snack-style meals.</div><a class="view-link" href="#">Browse</a></div>
-                </div>
-            </article>
-
-            <article class="scroll-end-card">
-                <div class="featured-kicker" style="color: var(--accent);">End of row</div>
-                <div class="featured-title" style="color: var(--text);">Browse all restaurants</div>
-                <div class="featured-meta" style="color: var(--muted);">See the full restaurant gallery with more spots and filters.</div>
-                <a href="#" class="view-link" style="margin-top: 16px;">See all</a>
-            </article>
+        <div class="featured-strip" style="grid-auto-columns: minmax(260px, 300px);" id="restaurants-strip">
+            <div class="loading-text">Loading restaurants...</div>
         </div>
     </section>
 
@@ -803,144 +615,8 @@
             <a href="#" class="see-all">See all</a>
         </div>
 
-        <div class="feed">
-            <article class="food-card">
-                <div class="food-image">
-                    <div class="image-badge">High Protein</div>
-                    <button class="save-fab">♡</button>
-                </div>
-                <div class="food-content">
-                    <div class="food-topline">
-                        <div class="food-name">Grilled Chicken Wrap</div>
-                        <div class="food-price">$9.49</div>
-                    </div>
-                    <div class="restaurant">Freshii</div>
-                    <div class="macro-row">
-                        <div class="macro">32P</div>
-                        <div class="macro">410 Cal</div>
-                        <div class="macro">Good $</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="mini-note">Tap for full nutrition.</div>
-                        <a class="view-link" href="#">Details</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image">
-                    <div class="image-badge">Vegetarian</div>
-                    <button class="save-fab">♡</button>
-                </div>
-                <div class="food-content">
-                    <div class="food-topline">
-                        <div class="food-name">Greek Yogurt Power Bowl</div>
-                        <div class="food-price">$7.95</div>
-                    </div>
-                    <div class="restaurant">Starbucks</div>
-                    <div class="macro-row">
-                        <div class="macro">21P</div>
-                        <div class="macro">290 Cal</div>
-                        <div class="macro">Quick</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="mini-note">Portable snack-style pick.</div>
-                        <a class="view-link" href="#">Details</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image">
-                    <div class="image-badge">Gym Pick</div>
-                    <button class="save-fab">♡</button>
-                </div>
-                <div class="food-content">
-                    <div class="food-topline">
-                        <div class="food-name">Double Chicken Bowl</div>
-                        <div class="food-price">$11.75</div>
-                    </div>
-                    <div class="restaurant">Chipotle</div>
-                    <div class="macro-row">
-                        <div class="macro">48P</div>
-                        <div class="macro">620 Cal</div>
-                        <div class="macro">Filling</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="mini-note">Big meal, easy scan.</div>
-                        <a class="view-link" href="#">Details</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image">
-                    <div class="image-badge">Breakfast</div>
-                    <button class="save-fab">♡</button>
-                </div>
-                <div class="food-content">
-                    <div class="food-topline">
-                        <div class="food-name">Egg White Wrap</div>
-                        <div class="food-price">$5.99</div>
-                    </div>
-                    <div class="restaurant">A&amp;W</div>
-                    <div class="macro-row">
-                        <div class="macro">19P</div>
-                        <div class="macro">280 Cal</div>
-                        <div class="macro">Fast</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="mini-note">Low text, visual cue first.</div>
-                        <a class="view-link" href="#">Details</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image">
-                    <div class="image-badge">Balanced</div>
-                    <button class="save-fab">♡</button>
-                </div>
-                <div class="food-content">
-                    <div class="food-topline">
-                        <div class="food-name">Chicken Harvest Salad</div>
-                        <div class="food-price">$10.25</div>
-                    </div>
-                    <div class="restaurant">Fresh Kitchen</div>
-                    <div class="macro-row">
-                        <div class="macro">29P</div>
-                        <div class="macro">360 Cal</div>
-                        <div class="macro">Light</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="mini-note">Clean shorthand metrics.</div>
-                        <a class="view-link" href="#">Details</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="food-card">
-                <div class="food-image">
-                    <div class="image-badge">Budget</div>
-                    <button class="save-fab">♡</button>
-                </div>
-                <div class="food-content">
-                    <div class="food-topline">
-                        <div class="food-name">Turkey Club Sandwich</div>
-                        <div class="food-price">$7.49</div>
-                    </div>
-                    <div class="restaurant">Tim Hortons</div>
-                    <div class="macro-row">
-                        <div class="macro">28P</div>
-                        <div class="macro">390 Cal</div>
-                        <div class="macro">Best $</div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="mini-note">Restaurant always visible.</div>
-                        <a class="view-link" href="#">Details</a>
-                    </div>
-                </div>
-            </article>
+        <div class="feed" id="items-feed">
+            <div class="loading-text">Loading meals...</div>
         </div>
     </section>
 
@@ -964,19 +640,438 @@
         <div class="nav-item">👤<br>Profile</div>
     </div>
 </nav>
+
+<script>
+    const backendUrl = "http://127.0.0.1:5000/items";
+    const defaultFoodImage = "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80";
+
+    const categoryImageMap = {
+        pizza: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=900&q=80",
+        salad: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80",
+        burger: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=80",
+        sushi: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=900&q=80",
+        sandwich: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=900&q=80",
+        wrap: "https://images.unsplash.com/photo-1530469912745-a215c6b256ea?auto=format&fit=crop&w=900&q=80",
+        pasta: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=900&q=80",
+        drink: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=80",
+        dessert: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=900&q=80",
+        chicken: "https://images.unsplash.com/photo-1604503468506-a8da13d82791?auto=format&fit=crop&w=900&q=80",
+        seafood: "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80",
+        breakfast: "https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=900&q=80",
+        bowl: "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?auto=format&fit=crop&w=900&q=80",
+        fries: "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=900&q=80",
+        soup: "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=900&q=80",
+        coffee: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80",
+        tea: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=900&q=80",
+        smoothie: "https://images.unsplash.com/photo-1505252585461-04db1eb84625?auto=format&fit=crop&w=900&q=80",
+        bakery: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=80",
+        rice: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80",
+        noodles: "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&w=900&q=80"
+    };
+
+    let allItems = [];
+
+    function getImageForItem(item) {
+        const category = (item.category || "").toLowerCase();
+        return categoryImageMap[category] || defaultFoodImage;
+    }
+
+    function getCalories(item) {
+        return item.macros && item.macros.calories ? item.macros.calories : null;
+    }
+
+    function getProtein(item) {
+        return item.macros && item.macros.protein_g ? item.macros.protein_g : null;
+    }
+
+    function getPrice(item) {
+        return typeof item.price_cad === "number" ? item.price_cad : null;
+    }
+
+    function formatPrice(item) {
+        const price = getPrice(item);
+        if (price === null) {
+            return "N/A";
+        }
+        return "$" + price.toFixed(2);
+    }
+
+    function getShortNote(item) {
+        if (item.description && item.description.trim()) {
+            return item.description.trim();
+        }
+        return "Tap for full nutrition.";
+    }
+
+    function getBadgeText(item) {
+        const category = (item.category || "").trim().toLowerCase();
+
+        if (!category || category === "other") {
+            return "Meal";
+        }
+
+        if (category === "breakfast") {
+            return "Breakfast";
+        }
+
+        if (category === "sandwich") {
+            return "Sandwich";
+        }
+
+        if (category === "wrap") {
+            return "Wrap";
+        }
+
+        if (category === "burger") {
+            return "Burger";
+        }
+
+        if (category === "salad") {
+            return "Salad";
+        }
+
+        if (category === "sushi") {
+            return "Sushi";
+        }
+
+        if (category === "chicken") {
+            return "Chicken";
+        }
+
+        return category.charAt(0).toUpperCase() + category.slice(1);
+    }
+
+    
+    function getValueLabel(item) {
+        const protein = getProtein(item);
+        const price = getPrice(item);
+
+        if (protein !== null && price !== null && price > 0) {
+            const ratio = protein / price;
+            if (ratio >= 4) {
+                return "Best $";
+            }
+            if (ratio >= 3) {
+                return "Good $";
+            }
+        }
+
+        const calories = getCalories(item);
+        if (calories !== null && calories <= 450) {
+            return "Light";
+        }
+
+        return "Quick";
+    }
+
+    function buildFoodCard(item) {
+        const protein = getProtein(item);
+        const calories = getCalories(item);
+        const imageUrl = getImageForItem(item);
+
+        return `
+            <article class="food-card">
+                <div class="food-image" style="background-image: url('${imageUrl}');">
+                    <div class="image-badge">${escapeHtml(getBadgeText(item))}</div>
+                    <button class="save-fab">♡</button>
+                </div>
+                <div class="food-content">
+                    <div class="food-topline">
+                        <div class="food-name">${escapeHtml(item.item_name || "Unnamed Item")}</div>
+                        <div class="food-price">${formatPrice(item)}</div>
+                    </div>
+                    <div class="restaurant">${escapeHtml(item.restaurant_name || "Unknown Restaurant")}</div>
+                    <div class="macro-row">
+                        <div class="macro">${protein !== null ? protein + "P" : "No P"}</div>
+                        <div class="macro">${calories !== null ? calories + " Cal" : "No Cal"}</div>
+                        <div class="macro">${escapeHtml(getValueLabel(item))}</div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="mini-note">${escapeHtml(getShortNote(item).slice(0, 90))}</div>
+                        <a class="view-link" href="fooditem-details.html?key=${encodeURIComponent(item.unique_key || "")}">Details</a>
+                    </div>
+                </div>
+            </article>
+        `;
+    }
+
+    function buildFeaturedCard(item, kickerText) {
+        const protein = getProtein(item);
+        const calories = getCalories(item);
+        const imageUrl = getImageForItem(item);
+
+        let metaParts = [];
+
+        if (item.restaurant_name) {
+            metaParts.push(item.restaurant_name);
+        }
+
+        if (getPrice(item) !== null) {
+            metaParts.push(formatPrice(item));
+        }
+
+        if (protein !== null) {
+            metaParts.push(protein + "P");
+        }
+
+        if (calories !== null) {
+            metaParts.push(calories + " Cal");
+        }
+
+        return `
+            <article class="featured-card" style="background-image: url('${imageUrl}');">
+                <div class="featured-kicker">${escapeHtml(kickerText)}</div>
+                <div class="featured-title">${escapeHtml(item.item_name || "Unnamed Item")}</div>
+                <div class="featured-meta">${escapeHtml(metaParts.join(" · "))}</div>
+            </article>
+        `;
+    }
+
+    function buildRestaurantCard(restaurantName, items) {
+        const firstItem = items[0];
+        const imageUrl = getImageForItem(firstItem);
+
+        let topProteinItem = null;
+        let bestProtein = -1;
+
+        for (const item of items) {
+            const protein = getProtein(item);
+            if (protein !== null && protein > bestProtein) {
+                bestProtein = protein;
+                topProteinItem = item;
+            }
+        }
+
+        let topPickText = "Top pick available";
+        if (topProteinItem) {
+            const protein = getProtein(topProteinItem);
+            const calories = getCalories(topProteinItem);
+            if (protein !== null && calories !== null) {
+                topPickText = `Top pick: ${protein}P at ${calories} Cal`;
+            } else if (protein !== null) {
+                topPickText = `Top pick: ${protein}P item`;
+            }
+        }
+
+        return `
+            <article class="food-card">
+                <div class="food-image" style="aspect-ratio: 1 / 0.68; background-image: url('${imageUrl}');">
+                    <div class="image-badge">Restaurant</div>
+                </div>
+                <div class="food-content">
+                    <div class="food-name">${escapeHtml(restaurantName)}</div>
+                    <div class="restaurant">${items.length} items tracked</div>
+                    <div class="macro-row">
+                        <div class="macro">${escapeHtml(topPickText)}</div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="mini-note">Browse menu items from this restaurant.</div>
+                        <a class="view-link" href="restaurant-UI.html?restaurant=${encodeURIComponent(restaurantName)}">Browse</a>
+                    </div>
+                </div>
+            </article>
+        `;
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function renderTopPicks(items) {
+        const container = document.getElementById("top-picks-strip");
+
+        const topItems = [...items]
+            .filter(item => {
+                const protein = getProtein(item);
+                const calories = getCalories(item);
+                return protein !== null && calories !== null && calories <= 700;
+            })
+            .sort((a, b) => getProtein(b) - getProtein(a))
+            .slice(0, 3);
+
+        if (topItems.length === 0) {
+            container.innerHTML = `<div class="empty-text">No top picks found.</div>`;
+            return;
+        }
+
+        const labels = ["Top picks today", "Best value", "Near you"];
+
+        container.innerHTML = topItems.map((item, index) => {
+            return buildFeaturedCard(item, labels[index] || "Featured");
+        }).join("");
+    }
+
+    function renderFeaturedPicks(items) {
+        const container = document.getElementById("featured-picks-strip");
+
+        const featuredItems = [...items]
+            .filter(item => {
+                const protein = getProtein(item);
+                const calories = getCalories(item);
+                return protein !== null && calories !== null;
+            })
+            .sort((a, b) => getProtein(b) - getProtein(a))
+            .slice(0, 5);
+
+        if (featuredItems.length === 0) {
+            container.innerHTML = `<div class="empty-text">No featured picks found.</div>`;
+            return;
+        }
+
+        let html = featuredItems.map((item) => {
+            return buildFeaturedCard(item, "Featured pick");
+        }).join("");
+
+        html += `
+            <article class="scroll-end-card">
+                <div class="featured-kicker" style="color: var(--accent);">Want more?</div>
+                <div class="featured-title" style="color: var(--text);">Browse more menu items</div>
+                <div class="featured-meta" style="color: var(--muted);">Keep scrolling through live backend data.</div>
+                <a href="#" class="view-link" style="margin-top: 16px;">See all</a>
+            </article>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    function renderProteinValue(items) {
+        const container = document.getElementById("protein-value-strip");
+
+        const bestProteinValue = [...items]
+            .filter(item => getProtein(item) !== null && getPrice(item) !== null && getPrice(item) > 0)
+            .sort((a, b) => (getProtein(b) / getPrice(b)) - (getProtein(a) / getPrice(a)))
+            .slice(0, 5);
+
+        if (bestProteinValue.length === 0) {
+            container.innerHTML = `<div class="empty-text">No protein value picks found.</div>`;
+            return;
+        }
+
+        let html = bestProteinValue.map((item) => buildFoodCard(item)).join("");
+        html += `
+            <article class="scroll-end-card">
+                <div class="featured-kicker" style="color: var(--accent);">End of row</div>
+                <div class="featured-title" style="color: var(--text);">See more value picks</div>
+                <div class="featured-meta" style="color: var(--muted);">Loaded from your backend items.</div>
+                <a href="#" class="view-link" style="margin-top: 16px;">See all</a>
+            </article>
+        `;
+        container.innerHTML = html;
+    }
+
+    function renderRestaurants(items) {
+        const container = document.getElementById("restaurants-strip");
+        const grouped = {};
+
+        for (const item of items) {
+            const restaurantName = item.restaurant_name || "Unknown Restaurant";
+            if (!grouped[restaurantName]) {
+                grouped[restaurantName] = [];
+            }
+            grouped[restaurantName].push(item);
+        }
+
+        const restaurantEntries = Object.entries(grouped)
+            .sort((a, b) => b[1].length - a[1].length)
+            .slice(0, 5);
+
+        if (restaurantEntries.length === 0) {
+            container.innerHTML = `<div class="empty-text">No restaurants found.</div>`;
+            return;
+        }
+
+        let html = restaurantEntries.map(([restaurantName, restaurantItems]) => {
+            return buildRestaurantCard(restaurantName, restaurantItems);
+        }).join("");
+
+        html += `
+            <article class="scroll-end-card">
+                <div class="featured-kicker" style="color: var(--accent);">End of row</div>
+                <div class="featured-title" style="color: var(--text);">Browse all restaurants</div>
+                <div class="featured-meta" style="color: var(--muted);">See the full restaurant gallery later.</div>
+                <a href="#" class="view-link" style="margin-top: 16px;">See all</a>
+            </article>
+        `;
+
+        container.innerHTML = html;
+    }
+
+    function renderUnder450(items) {
+        const container = document.getElementById("items-feed");
+        const filteredItems = [...items]
+            .filter(item => {
+                const calories = getCalories(item);
+                return calories !== null && calories <= 450;
+            })
+            .sort((a, b) => getProtein(b) - getProtein(a))
+            .slice(0, 9);
+
+        if (filteredItems.length === 0) {
+            container.innerHTML = `<div class="empty-text">No meals under 450 calories found.</div>`;
+            return;
+        }
+
+        container.innerHTML = filteredItems.map((item) => buildFoodCard(item)).join("");
+    }
+
+    function applySearchFilter() {
+        const searchInput = document.getElementById("search-input");
+        const searchText = searchInput.value.trim().toLowerCase();
+
+        if (!searchText) {
+            renderAllSections(allItems);
+            return;
+        }
+
+        const filteredItems = allItems.filter(item => {
+            const itemName = (item.item_name || "").toLowerCase();
+            const restaurantName = (item.restaurant_name || "").toLowerCase();
+            const category = (item.category || "").toLowerCase();
+
+            return itemName.includes(searchText) ||
+                   restaurantName.includes(searchText) ||
+                   category.includes(searchText);
+        });
+
+        renderAllSections(filteredItems);
+    }
+
+    function renderAllSections(items) {
+        renderTopPicks(items);
+        renderFeaturedPicks(items);
+        renderProteinValue(items);
+        renderRestaurants(items);
+        renderUnder450(items);
+    }
+
+    async function loadItemsFromBackend() {
+        try {
+            const response = await fetch(backendUrl);
+            if (!response.ok) {
+                throw new Error("Could not load items from backend.");
+            }
+
+            const items = await response.json();
+            allItems = items;
+            renderAllSections(allItems);
+        } catch (error) {
+            document.getElementById("top-picks-strip").innerHTML = `<div class="error-text">Failed to load top picks.</div>`;
+            document.getElementById("featured-picks-strip").innerHTML = `<div class="error-text">Failed to load featured picks.</div>`;
+            document.getElementById("protein-value-strip").innerHTML = `<div class="error-text">Failed to load protein value picks.</div>`;
+            document.getElementById("restaurants-strip").innerHTML = `<div class="error-text">Failed to load restaurants.</div>`;
+            document.getElementById("items-feed").innerHTML = `<div class="error-text">Failed to load meals from backend.</div>`;
+            console.error(error);
+        }
+    }
+
+    document.getElementById("search-input").addEventListener("input", applySearchFilter);
+
+    loadItemsFromBackend();
+</script>
 </body>
 </html>
-
-
-
-
-<!-- {
-    "restaurant_id": "tim_hortons",
-    "item_name": "Turkey Club Sandwich",
-    "price": 7.49,
-    "protein_g": 28,
-    "calories": 390,
-    "image_url": "https://restaurant-site.com/images/turkey-club.jpg"
-} -->
-
-<!-- possible new way to organize item entries -->
