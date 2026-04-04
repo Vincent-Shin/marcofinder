@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MacroFinder — Food Detail Concept</title>
+  <style>
+    :root {
+      --bg: #f7f6f1;
+      --surface: rgba(255,255,255,0.92);
+      --surface-2: #f0ede4;
+      --text: #1f1f1a;
+      --muted: #6d6a61;
+      --line: #e6e0d5;
+      --accent: #3f7b58;
+      --accent-2: #111827;
+      --accent-soft: #edf5ef;
+      --shadow: 0 18px 42px rgba(22, 22, 18, 0.08);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --max: 1220px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #fbfaf7 0%, #f5f2eb 100%);
+      color: var(--text);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    button { font: inherit; }
+
+    .container {
+      width: min(calc(100% - 20px), var(--max));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(251,250,247,0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(31,31,26,0.06);
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, #52a56f, #7fc591);
+      box-shadow: var(--shadow);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .icon-btn,
+    .pill-btn,
+    .action-btn,
+    .ghost-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.9);
+      color: var(--text);
+      border-radius: 999px;
+      cursor: pointer;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      font-size: 1rem;
+    }
+
+    .pill-btn,
+    .ghost-btn {
+      padding: 11px 16px;
+      font-weight: 700;
+    }
+
+    .search-shell {
+      background: rgba(255,255,255,0.92);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 24px rgba(22, 22, 18, 0.06);
+      min-width: 220px;
+      width: min(560px, 100%);
+    }
+
+    .search-shell input {
+      border: none;
+      outline: none;
+      background: transparent;
+      width: 100%;
+      color: var(--text);
+      font-size: 0.98rem;
+    }
+
+    .search-shell span {
+      color: var(--muted);
+    }
+
+    .page-shell {
+      padding: 18px 0 32px;
+    }
+
+    .crumb-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .crumbs {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      flex-wrap: wrap;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      position: relative;
+      min-height: 340px;
+      background-image: url('https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1400&q=80');
+      background-size: cover;
+      background-position: center;
+      isolation: isolate;
+      display: flex;
+      align-items: flex-end;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.58));
+      z-index: -1;
+    }
+
+    .hero-badges,
+    .hero-actions {
+      position: absolute;
+      top: 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      z-index: 2;
+    }
+
+    .hero-badges { left: 16px; }
+    .hero-actions { right: 16px; }
+
+    .badge,
+    .chip,
+    .metric-pill,
+    .mini-pill {
+      border-radius: 999px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .badge {
+      padding: 8px 11px;
+      font-size: 0.76rem;
+      background: rgba(255,255,255,0.94);
+      color: var(--text);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+    }
+
+    .hero-copy {
+      padding: 22px;
+      width: 100%;
+      color: white;
+    }
+
+    .restaurant-link {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 11px;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(8px);
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.84rem;
+      margin-bottom: 12px;
+    }
+
+    .hero-title-row {
+      display: flex;
+      gap: 14px;
+      align-items: start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .hero-title {
+      margin: 0;
+      font-size: clamp(1.85rem, 4.2vw, 3rem);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+      max-width: 12ch;
+    }
+
+    .hero-price {
+      font-size: 1.4rem;
+      font-weight: 900;
+      white-space: nowrap;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 18px;
+      padding: 10px 14px;
+      backdrop-filter: blur(8px);
+    }
+
+    .hero-subcopy {
+      margin-top: 10px;
+      font-size: 0.98rem;
+      color: rgba(255,255,255,0.92);
+      max-width: 52ch;
+      line-height: 1.45;
+    }
+
+    .body-pad {
+      padding: 18px;
+    }
+
+    .quick-metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: white;
+      padding: 14px;
+      min-height: 92px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .metric strong {
+      font-size: 1.25rem;
+      letter-spacing: -0.03em;
+    }
+
+    .metric span {
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    .metric-note {
+      color: var(--accent);
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .section {
+      margin-top: 16px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .section-head h2,
+    .section-head h3 {
+      margin: 0;
+      letter-spacing: -0.03em;
+    }
+
+    .section-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .explain-grid,
+    .detail-grid,
+    .info-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .explain-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .soft-panel {
+      background: var(--surface-2);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 14px;
+    }
+
+    .soft-panel strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.97rem;
+    }
+
+    .soft-panel p,
+    .soft-panel div {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .action-btn {
+      padding: 12px 16px;
+      font-weight: 800;
+      background: var(--accent-2);
+      color: white;
+      border-color: #111827;
+    }
+
+    .ghost-btn {
+      background: white;
+      color: var(--text);
+    }
+
+    .table-wrap {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 13px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+
+    th {
+      width: 42%;
+      color: var(--muted);
+      font-weight: 700;
+      background: #fcfbf8;
+    }
+
+    tr:last-child th,
+    tr:last-child td { border-bottom: none; }
+
+    .side-stack {
+      display: grid;
+      gap: 18px;
+      position: sticky;
+      top: 84px;
+    }
+
+    .score-box {
+      display: grid;
+      gap: 14px;
+    }
+
+    .score-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .score-top h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: -0.03em;
+    }
+
+    .score-big {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+    }
+
+    .score-small {
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.4;
+    }
+
+    .meter {
+      height: 12px;
+      border-radius: 999px;
+      background: #e9e4d9;
+      overflow: hidden;
+    }
+
+    .meter > span {
+      display: block;
+      height: 100%;
+      width: 74%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #61b07c, #3f7b58);
+    }
+
+    .meta-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.92rem;
+      align-items: start;
+    }
+
+    .meta-row span:first-child { color: var(--muted); }
+    .meta-row strong { text-align: right; }
+
+    .nearby-strip {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(250px, 280px);
+      gap: 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 4px;
+    }
+
+    .nearby-strip::-webkit-scrollbar { display: none; }
+
+    .mini-card {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 22px;
+      overflow: hidden;
+      min-height: 190px;
+    }
+
+    .mini-image {
+      height: 120px;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .mini-card:nth-child(1) .mini-image { background-image: url('https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80'); }
+    .mini-card:nth-child(2) .mini-image { background-image: url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80'); }
+    .mini-card:nth-child(3) .mini-image { background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80'); }
+
+    .mini-body {
+      padding: 14px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .mini-title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .mini-title {
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+    }
+
+    .mini-sub {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .mini-metrics {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .mini-pill,
+    .metric-pill,
+    .chip {
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      background: var(--surface-2);
+      color: #322f29;
+    }
+
+    .footer-space { height: 8px; }
+
+    @media (max-width: 1020px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .side-stack {
+        position: static;
+      }
+
+      .quick-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 860px) {
+      .topbar-inner {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .top-actions {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .search-shell {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .top-actions .pill-btn { display: none; }
+      .hero {
+        min-height: 300px;
+      }
+      .hero-title {
+        max-width: 100%;
+      }
+      .hero-copy {
+        padding: 18px;
+      }
+      .quick-metrics,
+      .explain-grid,
+      .detail-grid,
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero-price {
+        font-size: 1.16rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <div class="container topbar-inner" style="display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px;">
+    <div class="brand">
+      <div class="brand-mark">M</div>
+      <span>MacroFinder</span>
+    </div>
+
+    <div style="display: flex; justify-content: center; min-width: 0;">
+      <div class="search-shell">
+        <span>🔎</span>
+        <input type="text" placeholder="Search meals or restaurants" />
+      </div>
+    </div>
+
+    <div class="top-actions">
+      <button class="pill-btn">Saved</button>
+      <button class="pill-btn">Profile</button>
+    </div>
+  </div>
+</header>
+
+<main class="container page-shell">
+  <div class="crumb-row">
+    <div class="crumbs">
+      <button class="ghost-btn">← Back</button>
+      <span>Food</span>
+      <span>•</span>
+      <span>High Protein</span>
+    </div>
+    <div class="mini-metrics">
+      <div class="chip">Portable pick</div>
+      <div class="chip">Fast lunch</div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <section class="card">
+      <div class="hero">
+        <div class="hero-badges">
+          <div class="badge">High Protein</div>
+          <div class="badge">Good Value</div>
+        </div>
+        <div class="hero-actions">
+          <button class="icon-btn" aria-label="Save">♡</button>
+        </div>
+
+        <div class="hero-copy">
+          <div class="restaurant-link">🏪 Freshii</div>
+          <div class="hero-title-row">
+            <h1 class="hero-title">Grilled Chicken Wrap</h1>
+            <div class="hero-price">$9.49</div>
+          </div>
+          <div class="hero-subcopy">
+            Fast grab-and-go option with a strong protein return for the price. The card view stays short; this page gives the fuller breakdown.
+          </div>
+        </div>
+      </div>
+
+      <div class="body-pad">
+        <div class="quick-metrics">
+          <div class="metric">
+            <strong>32g</strong>
+            <span>Protein</span>
+            <div class="metric-note">Strong main signal</div>
+          </div>
+          <div class="metric">
+            <strong>410</strong>
+            <span>Calories</span>
+            <div class="metric-note">Still portable</div>
+          </div>
+          <div class="metric">
+            <strong>4.2</strong>
+            <span>Protein / $</span>
+            <div class="metric-note">Value metric</div>
+          </div>
+          <div class="metric">
+            <strong>Partial+</strong>
+            <span>Data quality</span>
+            <div class="metric-note">Enough to rank clearly</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <h2>Why this stands out</h2>
+              <p>Keep the explanation short and decision-focused.</p>
+            </div>
+          </div>
+          <div class="explain-grid">
+            <div class="soft-panel">
+              <strong>Price-aware</strong>
+              <p>Useful when someone wants a quick protein option without drifting into a much more expensive bowl or combo.</p>
+            </div>
+            <div class="soft-panel">
+              <strong>Simple shorthand</strong>
+              <p>The card only needed price, protein, and calories. The clicked page is where you earn trust with the rest.</p>
+            </div>
+            <div class="soft-panel">
+              <strong>On-the-go fit</strong>
+              <p>Visual first, low reading load, fast to confirm before ordering or walking into the restaurant.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button class="action-btn">＋ Add to Compare</button>
+          <button class="ghost-btn">★ Save Item</button>
+          <button class="ghost-btn">View Restaurant</button>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <h2>Nutrition breakdown</h2>
+              <p>Show the full values here, not on the homepage card.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <tbody>
+              <tr><th>Calories</th><td>410</td></tr>
+              <tr><th>Protein</th><td>32 g</td></tr>
+              <tr><th>Carbs</th><td>37 g</td></tr>
+              <tr><th>Fat</th><td>12 g</td></tr>
+              <tr><th>Sodium</th><td>760 mg</td></tr>
+              <tr><th>Sugar</th><td>5 g</td></tr>
+              <tr><th>Portion</th><td>1 wrap</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <h2>Extra info</h2>
+              <p>Useful secondary details without bloating the top of the page.</p>
+            </div>
+          </div>
+          <div class="info-grid">
+            <div class="soft-panel">
+              <strong>Category</strong>
+              <div>Wraps / Lunch</div>
+            </div>
+            <div class="soft-panel">
+              <strong>Best use case</strong>
+              <div>Quick protein-focused lunch before class, work, or the gym.</div>
+            </div>
+            <div class="soft-panel">
+              <strong>What to avoid</strong>
+              <div>Do not overload this section with long health disclaimers or giant blocks of copy.</div>
+            </div>
+            <div class="soft-panel">
+              <strong>Image idea</strong>
+              <div>Use the real food image if you have it. If not, use a strong category fallback instead of a fake broken placeholder.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <div>
+              <h2>Similar picks</h2>
+              <p>A small strip keeps people exploring without leaving the detail page cold.</p>
+            </div>
+          </div>
+          <div class="nearby-strip">
+            <article class="mini-card">
+              <div class="mini-image"></div>
+              <div class="mini-body">
+                <div class="mini-title-row">
+                  <div class="mini-title">Greek Yogurt Protein Box</div>
+                  <strong>$6.95</strong>
+                </div>
+                <div class="mini-sub">Starbucks</div>
+                <div class="mini-metrics">
+                  <div class="mini-pill">20P</div>
+                  <div class="mini-pill">270 Cal</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="mini-card">
+              <div class="mini-image"></div>
+              <div class="mini-body">
+                <div class="mini-title-row">
+                  <div class="mini-title">Chicken Harvest Salad</div>
+                  <strong>$10.25</strong>
+                </div>
+                <div class="mini-sub">Fresh Kitchen</div>
+                <div class="mini-metrics">
+                  <div class="mini-pill">29P</div>
+                  <div class="mini-pill">360 Cal</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="mini-card">
+              <div class="mini-image"></div>
+              <div class="mini-body">
+                <div class="mini-title-row">
+                  <div class="mini-title">Turkey Club Sandwich</div>
+                  <strong>$7.49</strong>
+                </div>
+                <div class="mini-sub">Tim Hortons</div>
+                <div class="mini-metrics">
+                  <div class="mini-pill">28P</div>
+                  <div class="mini-pill">390 Cal</div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side-stack">
+      <section class="card body-pad score-box">
+        <div class="score-top">
+          <div>
+            <h3>Value snapshot</h3>
+            <div class="score-small">Keep this tight. It should explain why the app ranked the item well.</div>
+          </div>
+          <div class="score-big">8.7</div>
+        </div>
+        <div class="meter"><span></span></div>
+        <div class="score-small">Strong protein-for-price with manageable calories for a fast lunch pick.</div>
+        <div class="mini-metrics">
+          <div class="metric-pill">4.2 g / $</div>
+          <div class="metric-pill">Portable</div>
+          <div class="metric-pill">Fast pick</div>
+        </div>
+      </section>
+
+      <section class="card body-pad">
+        <div class="section-head" style="margin-bottom: 10px;">
+          <div>
+            <h3>Data trust</h3>
+            <p>Important because your data can be incomplete.</p>
+          </div>
+        </div>
+        <div class="meta-list">
+          <div class="meta-row"><span>Listed fields</span><strong>Calories, protein, carbs, fat, sodium, sugar</strong></div>
+          <div class="meta-row"><span>Missing</span><strong>Cholesterol, sat fat, trans fat</strong></div>
+          <div class="meta-row"><span>Last updated</span><strong>Apr 3, 2026</strong></div>
+          <div class="meta-row"><span>Source</span><strong><a href="#" style="color: var(--accent);">Restaurant nutrition page</a></strong></div>
+        </div>
+      </section>
+
+      <section class="card body-pad">
+        <div class="section-head" style="margin-bottom: 10px;">
+          <div>
+            <h3>Restaurant quick view</h3>
+            <p>This should support the next tap.</p>
+          </div>
+        </div>
+        <div class="meta-list">
+          <div class="meta-row"><span>Restaurant</span><strong>Freshii</strong></div>
+          <div class="meta-row"><span>Tracked items</span><strong>18 meals</strong></div>
+          <div class="meta-row"><span>Best known trait</span><strong>Portable protein picks</strong></div>
+        </div>
+        <div class="action-row" style="margin-top: 16px;">
+          <button class="ghost-btn">Open Menu</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <div class="footer-space"></div>
+</main>
+</body>
+</html>
