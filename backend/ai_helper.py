@@ -1,7 +1,8 @@
 import json
-from openai import OpenAI
+import os
+from google import genai
 
-client = OpenAI()
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 ALLOWED_CATEGORIES = [
     "pizza",
@@ -103,7 +104,6 @@ def build_item_text(item):
 
 def generate_category_and_description(item):
     matched_category = try_basic_category_match(item)
-
     item_text = build_item_text(item)
 
     prompt = f"""
@@ -115,15 +115,16 @@ Choose exactly one category from this list:
 Also write one human-sounding description in simple English.
 
 Rules for the description:
-- keep it to 2 sentences
+- keep it to 2 or 3 sentences
 - sound natural and simple
 - do not sound like marketing
 - do not use fancy words
 - do not invent ingredients that are not clear from the item name
-- make it a bit informative
-- mention the macro profile in a natural way
+- make it informative
+- highlight the macro profile in a natural way
 - use the macro values only if they are present
-- do not mention every macro unless it fits naturally
+- do not dump raw numbers unless it reads naturally
+- focus on what kind of food it is and what the macros suggest
 
 If the category is obvious, use it.
 If unsure, use "other".
@@ -138,22 +139,12 @@ Return JSON only:
 {{"category": "one_category_here", "description": "your_description_here"}}
 """
 
-    response = client.chat.completions.create(
-        model="gpt-4.1-mini",
-        temperature=0,
-        messages=[
-            {
-                "role": "system",
-                "content": "You classify restaurant menu items and write simple human descriptions."
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=prompt,
     )
 
-    content = response.choices[0].message.content.strip()
+    content = response.text.strip()
     data = json.loads(content)
 
     category = data.get("category", "other")
