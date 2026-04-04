@@ -1,39 +1,3 @@
-import json
-import os
-from google import genai
-
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
-ALLOWED_CATEGORIES = [
-    "pizza",
-    "salad",
-    "burger",
-    "sushi",
-    "sandwich",
-    "wrap",
-    "pasta",
-    "drink",
-    "dessert",
-    "appetizer",
-    "chicken",
-    "seafood",
-    "breakfast",
-    "bowl",
-    "fries",
-    "soup",
-    "coffee",
-    "tea",
-    "smoothie",
-    "bakery",
-    "mexican",
-    "indian",
-    "noodles",
-    "rice",
-    "snack",
-    "other"
-]
-
-
 def try_basic_category_match(item):
     item_name = (item.get("item_name") or "").lower()
 
@@ -70,16 +34,23 @@ def try_basic_category_match(item):
     if "shrimp" in item_name or "salmon" in item_name or "tuna" in item_name:
         return "seafood"
 
-    return None
+    return "other"
 
 
-def build_item_text(item):
-    restaurant_name = item.get("restaurant_name") or ""
-    item_name = item.get("item_name") or ""
-    portion = item.get("portion") or ""
+def get_macro_label(value, low_cutoff, high_cutoff, low_text, mid_text, high_text):
+    if value is None:
+        return None
 
-    macros = item.get("macros") or {}
+    if value >= high_cutoff:
+        return high_text
 
+    if value <= low_cutoff:
+        return low_text
+
+    return mid_text
+
+
+def build_macro_sentence(macros):
     calories = macros.get("calories")
     protein_g = macros.get("protein_g")
     carbs_g = macros.get("carbs_g")
@@ -87,74 +58,136 @@ def build_item_text(item):
     sodium_mg = macros.get("sodium_mg")
     sugar_g = macros.get("sugar_g")
 
-    lines = [
-        f"restaurant_name: {restaurant_name}",
-        f"item_name: {item_name}",
-        f"portion: {portion}",
-        f"calories: {calories}",
-        f"protein_g: {protein_g}",
-        f"carbs_g: {carbs_g}",
-        f"fat_g: {fat_g}",
-        f"sodium_mg: {sodium_mg}",
-        f"sugar_g: {sugar_g}",
-    ]
+    parts = []
 
-    return "\n".join(lines)
+    calorie_label = get_macro_label(
+        calories, 250, 600,
+        "lower in calories",
+        "moderate in calories",
+        "higher in calories"
+    )
+    if calorie_label:
+        parts.append(calorie_label)
+
+    protein_label = get_macro_label(
+        protein_g, 10, 20,
+        "lighter in protein",
+        "has a moderate amount of protein",
+        "has a good amount of protein"
+    )
+    if protein_label:
+        parts.append(protein_label)
+
+    carbs_label = get_macro_label(
+        carbs_g, 15, 40,
+        "lower in carbs",
+        "has a moderate amount of carbs",
+        "has a higher amount of carbs"
+    )
+    if carbs_label:
+        parts.append(carbs_label)
+
+    fat_label = get_macro_label(
+        fat_g, 8, 20,
+        "lower in fat",
+        "has a moderate amount of fat",
+        "has a higher amount of fat"
+    )
+    if fat_label:
+        parts.append(fat_label)
+
+    sodium_label = get_macro_label(
+        sodium_mg, 300, 900,
+        None,
+        None,
+        "It is also higher in sodium"
+    )
+    if sodium_label:
+        parts.append(sodium_label)
+
+    sugar_label = get_macro_label(
+        sugar_g, 5, 20,
+        None,
+        None,
+        "It also has a higher sugar content"
+    )
+    if sugar_label:
+        parts.append(sugar_label)
+
+    normal_parts = []
+    extra_parts = []
+
+    for part in parts:
+        if part.startswith("It "):
+            extra_parts.append(part)
+        else:
+            normal_parts.append(part)
+
+    sentences = []
+
+    if normal_parts:
+        first_sentence = "It is " + ", ".join(normal_parts) + "."
+        first_sentence = first_sentence.replace("It is has", "It has")
+        sentences.append(first_sentence)
+
+    for part in extra_parts:
+        if not part.endswith("."):
+            part = part + "."
+        sentences.append(part)
+
+    return " ".join(sentences).strip()
+
+
+def build_food_sentence(item, category):
+    item_name = (item.get("item_name") or "").strip()
+    portion = (item.get("portion") or "").strip()
+
+    if category == "pizza":
+        text = f"{item_name} is a pizza item"
+    elif category == "salad":
+        text = f"{item_name} is a salad option"
+    elif category == "burger":
+        text = f"{item_name} is a burger item"
+    elif category == "sushi":
+        text = f"{item_name} is a sushi-style item"
+    elif category == "sandwich":
+        text = f"{item_name} is a sandwich option"
+    elif category == "wrap":
+        text = f"{item_name} is a wrap item"
+    elif category == "pasta":
+        text = f"{item_name} is a pasta item"
+    elif category == "drink":
+        text = f"{item_name} is a drink option"
+    elif category == "dessert":
+        text = f"{item_name} is a dessert item"
+    elif category == "chicken":
+        text = f"{item_name} is a chicken-based item"
+    elif category == "seafood":
+        text = f"{item_name} is a seafood-based item"
+    elif category == "breakfast":
+        text = f"{item_name} is a breakfast item"
+    elif category == "bowl":
+        text = f"{item_name} is a bowl-style item"
+    else:
+        text = f"{item_name} is a menu item"
+
+    if portion:
+        text += f" served in a {portion} portion"
+
+    return text + "."
 
 
 def generate_category_and_description(item):
-    matched_category = try_basic_category_match(item)
-    item_text = build_item_text(item)
+    category = try_basic_category_match(item)
+    macros = item.get("macros") or {}
 
-    prompt = f"""
-You are labeling restaurant menu items.
+    first_sentence = build_food_sentence(item, category)
+    second_sentence = build_macro_sentence(macros)
 
-Choose exactly one category from this list:
-{", ".join(ALLOWED_CATEGORIES)}
-
-Also write one human-sounding description in simple English.
-
-Rules for the description:
-- keep it to 2 or 3 sentences
-- sound natural and simple
-- do not sound like marketing
-- do not use fancy words
-- do not invent ingredients that are not clear from the item name
-- make it informative
-- highlight the macro profile in a natural way
-- use the macro values only if they are present
-- do not dump raw numbers unless it reads naturally
-- focus on what kind of food it is and what the macros suggest
-
-If the category is obvious, use it.
-If unsure, use "other".
-
-Menu item:
-{item_text}
-
-If a basic matched category already exists, use this category:
-{matched_category}
-
-Return JSON only:
-{{"category": "one_category_here", "description": "your_description_here"}}
-"""
-
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-    )
-
-    content = response.text.strip()
-    data = json.loads(content)
-
-    category = data.get("category", "other")
-    description = data.get("description", "").strip()
-
-    if matched_category is not None:
-        category = matched_category
-
-    if category not in ALLOWED_CATEGORIES:
-        category = "other"
+    if second_sentence:
+        description = first_sentence + " " + second_sentence
+    else:
+        description = first_sentence
 
     return {
         "category": category,
