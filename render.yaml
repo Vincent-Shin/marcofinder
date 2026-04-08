@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: macrofinder
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    plan: free
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false
+      - key: DB_NAME
+        value: macro_finder
+      - key: AUTH_MONGO_URI
+        sync: false
+      - key: AUTH_DB_NAME
+        value: macro_finder_auth
+      - key: FLASK_SECRET_KEY
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@macrofinder.local
