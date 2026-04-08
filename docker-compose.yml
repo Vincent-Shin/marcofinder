@@ -20,11 +20,36 @@ services:
     ports:
       - "5000:5000"
     environment:
+      FLASK_SECRET_KEY: macrofinder-docker-dev-secret
+      ADMIN_EMAIL: admin@macrofinder.local
       MONGO_URI: mongodb://mongo:27017/
       DB_NAME: macro_finder
     depends_on:
       mongo:
         condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: macrofinder-frontend
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+    depends_on:
+      - backend
+
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: macrofinder-proxy
+    ports:
+      - "8080:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
 
 volumes:
   mongo_data:
