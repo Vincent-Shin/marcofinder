@@ -125,25 +125,37 @@ function SectionRow({
           return (
             <article key={item.unique_key} className="highlight-card">
               <div className="visual-card">
-                <div className={`card-visual category-${category.key}`}>
-                  <span className="card-visual-icon">{imageLabel(item)}</span>
-                  <span className="image-chip">Preview</span>
+              <button
+                type="button"
+                className={`card-visual category-${category.key}`}
+                onClick={() =>
+                  navigate(`/meals/${encodeURIComponent(item.unique_key)}`)
+                }
+                aria-label={`Preview ${item.item_name}`}
+              >
+                <span className="card-visual-icon">{imageLabel(item)}</span>
+                <span className="image-chip">Preview</span>
+              </button>
+              <div className="visual-copy">
+                <div className="card-top">
+                  <span className="metric-badge">{money(item.price_cad)}</span>
+                  <button
+                    type="button"
+                    className={`save-button ${isSaved ? "is-active" : ""}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleSaved(item.unique_key);
+                    }}
+                    aria-label={isSaved ? "Unsave meal" : "Save meal"}
+                  >
+                    <span className="heart-icon" aria-hidden="true">
+                      {isSaved ? "♥" : "♡"}
+                    </span>
+                    <span className="visually-hidden">
+                      {isSaved ? "Saved meal" : "Save meal"}
+                    </span>
+                  </button>
                 </div>
-                <div className="visual-copy">
-                  <div className="card-top">
-                    <span className="metric-badge">{money(item.price_cad)}</span>
-                    <button
-                      type="button"
-                      className={`save-button ${isSaved ? "is-active" : ""}`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        toggleSaved(item.unique_key);
-                      }}
-                      aria-label="Save meal"
-                    >
-                      {isSaved ? "Love" : "Save"}
-                    </button>
-                  </div>
 
                   <button
                     type="button"

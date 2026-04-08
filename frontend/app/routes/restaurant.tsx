@@ -141,10 +141,16 @@ export default function RestaurantRoute() {
                 <div className="card-actions">
                   <button
                     type="button"
-                    className="ghost-pill item-save-pill"
+                    className={`save-button save-button--pill item-save-pill ${isSaved ? "is-active" : ""}`}
                     onClick={() => toggleSaved(item.unique_key)}
+                    aria-label={isSaved ? "Unsave meal" : "Save meal"}
                   >
-                    {isSaved ? "Saved" : "Save"}
+                    <span className="heart-icon" aria-hidden="true">
+                      {isSaved ? "♥" : "♡"}
+                    </span>
+                    <span className="visually-hidden">
+                      {isSaved ? "Saved meal" : "Save meal"}
+                    </span>
                   </button>
                   <button
                     type="button"

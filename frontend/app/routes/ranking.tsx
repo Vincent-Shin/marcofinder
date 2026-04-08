@@ -210,10 +210,16 @@ export default function RankingRoute() {
                     </Link>
                     <button
                       type="button"
-                      className="ghost-pill"
+                      className={`save-button save-button--pill ${isSaved ? "is-active" : ""}`}
                       onClick={() => toggleSaved(item.unique_key)}
+                      aria-label={isSaved ? "Unsave meal" : "Save meal"}
                     >
-                      {isSaved ? "Saved" : "Save"}
+                      <span className="heart-icon" aria-hidden="true">
+                        {isSaved ? "♥" : "♡"}
+                      </span>
+                      <span className="visually-hidden">
+                        {isSaved ? "Saved meal" : "Save meal"}
+                      </span>
                     </button>
                     <button
                       type="button"

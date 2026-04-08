@@ -1,5 +1,5 @@
 import os
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from urllib.parse import unquote
 
@@ -24,7 +24,7 @@ def normalize_email(value):
 
 
 def now_iso():
-    return datetime.now(UTC).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def parse_bool_arg(name):
@@ -407,7 +407,7 @@ def forgot_password():
                 "email": email,
                 "token": token,
                 "created_at": now_iso(),
-                "expires_at": (datetime.now(UTC) + timedelta(hours=1)).isoformat(),
+                "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
             }
         },
         upsert=True,
