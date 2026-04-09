@@ -1,4 +1,4 @@
-import { Link, Navigate, useNavigate } from "react-router";
+import { Link, useNavigate } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
 import { fetchItemByKey, updatePassword, updateProfile } from "../lib/api";
@@ -51,8 +51,15 @@ export default function ProfileRoute() {
     return <main className="container page-grid"><div className="loading-card">Loading profile...</div></main>;
   }
 
+  useEffect(() => {
+    if (!isReady) return;
+    if (!user) {
+      navigate("/login", { replace: true });
+    }
+  }, [isReady, navigate, user]);
+
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return null;
   }
 
   async function handleProfileSubmit(event: React.FormEvent<HTMLFormElement>) {

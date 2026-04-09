@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate } from "@remix-run/react";
 import { useState } from "react";
 
 import { login } from "../lib/api";

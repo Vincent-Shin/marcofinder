@@ -7,16 +7,18 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useRouteError,
   useLocation,
   useNavigate,
-} from "react-router";
+} from "@remix-run/react";
 import { useEffect, useState } from "react";
+import type { LinksFunction } from "@remix-run/node";
 
-import type { Route } from "./+types/root";
-import "./app.css";
+import appStylesHref from "./app.css?url";
 import { AppStateProvider, useAppState } from "./lib/app-state";
 
-export const links: Route.LinksFunction = () => [
+export const links: LinksFunction = () => [
+  { rel: "stylesheet", href: appStylesHref },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -129,7 +131,8 @@ export default function App() {
   );
 }
 
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+export function ErrorBoundary() {
+  const error = useRouteError();
   let message = "Something broke";
   let details = "An unexpected error occurred while loading Macro Finder.";
   let stack: string | undefined;

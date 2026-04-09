@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
 
 import { fetchItems, fetchRestaurants } from "../lib/api";

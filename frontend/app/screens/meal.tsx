@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router";
+import { Link, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 
 import { fetchItemByKey } from "../lib/api";

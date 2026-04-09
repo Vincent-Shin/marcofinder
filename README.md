@@ -1,326 +1,112 @@
-MacroFinder
+## MacroFinder
 
-MacroFinder is a project that collects nutrition information from restaurant menus and stores it in a database. The data is scraped from restaurant nutrition PDFs or websites and then sent to a backend API which stores the information in MongoDB.
+MacroFinder helps users compare restaurant meals by price and macros, while giving restaurant owners and admins a moderation workflow for menu updates.
 
-The goal of the project is to create a database of restaurant food items and their macros such as calories, protein, carbs, fat, sodium, and sugar.
+## Stack
 
----
+- Frontend: Remix, React, TypeScript, Vite
+- Backend: Flask, Python
+- Database: MongoDB Atlas for shared data, MongoDB in Docker for local stack testing
+- Deployment: Docker Compose locally, Render for public hosting
 
-Project Structure
+## User Roles
 
-MacroFinder/
+- `user`: browse meals, save favorites, compare items, manage profile
+- `restaurant_owner`: request restaurant access and submit menu changes for admin review
+- `admin`: create restaurants, assign owners, and approve or reject owner requests and menu submissions
 
-backend/
-Contains the Flask backend API.
+## Mobile Strategy
 
-Files include:
-app.py
-routes.py
-db.py
-requirements.txt
-.env (local only)
+MacroFinder uses a mixed strategy: desktop-first for management workflows and mobile-friendly responsive behavior for high-frequency browsing tasks. The main discovery flow is the most common user path, so search, filtering, rankings, and restaurant browsing are designed to collapse cleanly onto smaller screens with stacked controls, horizontally scrollable chip rails, single-column cards, and touch-sized actions. This keeps the mobile experience fast for regular users who are likely deciding what to eat on the go.
 
-scraper/
-Contains the scraping system.
+Administrative and owner tools are more complex, so they are designed from a desktop-first information architecture and then adapted responsively for mobile. On smaller screens, dense management panels collapse into single-column layouts, form grids stack vertically, action groups expand to full width, and long queues use internal scrolling to avoid excessive page growth. This preserves access to the full moderation workflow on mobile while acknowledging that desktop remains the best environment for heavy management tasks.
 
-Files include:
-item_template.py
-api_client.py
-run_all_scrapers.py
+The trade-off is intentional: no role loses core functionality on mobile, but the interface prioritizes speed and clarity for browsing first, and then compresses higher-complexity management tools in a usable way for smaller screens.
 
-scraper/restaurants/
-Contains individual scrapers for each restaurant.
+## Project Structure
 
-docker-compose.yml
-Docker configuration for running backend and database locally.
+- [backend](/c:/Users/vince/seng513-remix-integration/backend): Flask API, auth, moderation, database access
+- [frontend](/c:/Users/vince/seng513-remix-integration/frontend): Remix frontend
+- [scraper](/c:/Users/vince/seng513-remix-integration/scraper): restaurant scrapers and ingestion tooling
+- [deploy](/c:/Users/vince/seng513-remix-integration/deploy): nginx and Render runtime config
+- [docker-compose.yml](/c:/Users/vince/seng513-remix-integration/docker-compose.yml): local full-stack Docker environment
 
-README.md
-Project documentation.
+## Local Development
 
----
+Backend in `cmd`:
 
-How the System Works
-
-Restaurant Nutrition PDF or Website
-↓
-Python Scraper
-↓
-HTTP POST request to Flask Backend
-↓
-MongoDB Database
-↓
-API endpoints return stored data
-
-The scraper does not write directly to the database.
-All data is sent through the backend API.
-
----
-
-Technology Stack
-
-Python 3.9+
-Flask
-MongoDB Atlas
-PyMongo
-requests
-pdfplumber
-Docker Compose
-GitLab
-
----
-
-Database Schema
-
-The MongoDB collection is called:
-
-menu_items
-
-Each document contains:
-
-restaurant_id
-restaurant_name
-item_name
-category
-portion
-price_cad
-unique_key
-
-macros
-calories
-protein_g
-carbs_g
-fat_g
-sodium_mg
-sugar_g
-
-source_url
-scraped_at
-
----
-
-Duplicate Protection
-
-Each item has a deterministic key:
-
-restaurant_id | item_name | portion
-
-This value is stored as:
-
-unique_key
-
-MongoDB also has a unique index on this field.
-This ensures that the same item cannot be inserted twice.
-
-If a duplicate item is sent to the backend, the API returns HTTP 409.
-
----
-
-Backend API
-
-Health Check
-
-GET /health
-
-Used to verify that the backend server is running.
-
-Example:
-
-[http://localhost:5000/health](http://localhost:5000/health)
-
----
-
-Insert Item
-
-POST /items
-
-Adds a normalized menu item to the database.
-
-Responses:
-
-201  item inserted successfully
-409  duplicate item
-400  validation error
-
----
-
-Get All Items
-
-GET /items
-
-Returns all stored menu items.
-
-Example:
-
-[http://localhost:5000/items](http://localhost:5000/items)
-
----
-
-Running the Backend Locally
-
-1. Go to the backend folder
-
-cd backend
-
-2. Activate the virtual environment
-
-.\venv\Scripts\Activate.ps1
-
-3. Install dependencies
-
-pip install -r requirements.txt
-
-4. Create a .env file
-
-Inside backend/ create a file called .env
-
-Example:
-
-MONGO_URI=your_mongodb_connection_string
-DB_NAME=macro_finder
-
-5. Start the backend
-
+```cmd
+cd c:\Users\vince\seng513-remix-integration\backend
+set MONGO_URI=mongodb+srv://MainUser:User123@cluster1.j4e1jvz.mongodb.net/?appName=Cluster1
+set DB_NAME=macro_finder
+set FLASK_SECRET_KEY=macrofinder-local-dev-secret-2026
+set ADMIN_EMAIL=admin@macrofinder.local
+set PORT=5003
 python app.py
+```
 
-The backend will run at:
+Frontend:
 
-[http://127.0.0.1:5000](http://127.0.0.1:5000)
+```cmd
+cd c:\Users\vince\seng513-remix-integration\frontend
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173
+```
 
----
+Useful routes:
 
-Running the Scrapers
+- `http://127.0.0.1:5173/discover`
+- `http://127.0.0.1:5173/login`
+- `http://127.0.0.1:5173/signup`
+- `http://127.0.0.1:5173/profile`
+- `http://127.0.0.1:5173/admin`
+- `http://127.0.0.1:5003/health`
 
-1. Go to the scraper folder
+## Docker
 
-cd scraper
+The Docker stack runs the full local app:
 
-2. Activate the virtual environment
+- `mongo`
+- `backend`
+- `frontend`
+- `proxy`
 
-.\venv\Scripts\Activate.ps1
+Start it from the repo root:
 
-3. Install dependencies
-
-pip install -r requirements.txt
-
-4. Run one scraper
-
-Example:
-
-python restaurants\subway_scraper.py
-
----
-
-Run All Scrapers
-
-You can run all restaurant scrapers automatically:
-
-python run_all_scrapers.py
-
-This script runs each scraper one by one and sends data to the backend API.
-
----
-
-Docker Setup
-
-For demonstration and testing, the project includes a Docker Compose environment.
-
-This runs:
-
-Flask backend
-MongoDB database
-
-The Docker database acts as a makeshift database for the assignment.
-
----
-
-Start Docker Environment
-
-From the project root:
-
+```cmd
 docker compose up --build
+```
 
-The backend will be available at:
+Main local Docker entrypoint:
 
-[http://localhost:5000](http://localhost:5000)
+- `http://127.0.0.1:8080`
 
----
+Useful Docker endpoints:
 
-Seed the Database
+- `http://127.0.0.1:8080/discover`
+- `http://127.0.0.1:8080/admin`
+- `http://127.0.0.1:8080/api/health`
 
-After starting Docker, open another terminal and run:
+Stop the stack:
 
-cd scraper
-
-.\venv\Scripts\Activate.ps1
-
-python run_all_scrapers.py
-
-This will send all scraped items to the backend which stores them in the MongoDB container.
-
----
-
-Stop Docker
-
+```cmd
 docker compose down
+```
 
-This stops the containers but keeps the database.
+Remove the local Docker database volume:
 
----
-
-Delete the Docker Database
-
+```cmd
 docker compose down -v
+```
 
-This removes the MongoDB volume and clears all stored data.
+## Public Deployment
 
----
+Current Render deployment:
 
-Checking Stored Data
+- `https://macrofinder-remix.onrender.com`
 
-From a browser:
+## Notes
 
-[http://localhost:5000/items](http://localhost:5000/items)
-
----
-
-Checking the Database Directly
-
-docker exec -it macrofinder-mongo mongosh
-
-Then run:
-
-use macro_finder
-db.menu_items.countDocuments()
-
----
-
-Git Workflow
-
-The main branch is protected.
-
-Do not push directly to main.
-
-Use a feature branch and create a Merge Request.
-
-Example workflow:
-
-git checkout main
-git pull origin main
-
-git checkout mohit-scraper
-
-git add .
-git commit -m "message"
-git push origin mohit-scraper
-
-Then create a Merge Request in GitLab.
-
----
-
-Notes
-
-The scraper never inserts data directly into MongoDB.
-All data goes through the backend API.
-
-The Docker database is only for local testing and demonstration.
-MongoDB Atlas can still be used in development if configured in the .env file.
+- The backend owns business logic, auth, moderation, and persistence.
+- The scraper never writes directly to MongoDB; data flows through the backend API.
+- Secrets such as [backend/.env](/c:/Users/vince/seng513-remix-integration/backend/.env) are local-only and should not be committed.

@@ -1350,6 +1350,7 @@ pre {
     display: grid;
     grid-template-columns: auto auto;
     align-items: start;
+    gap: 14px;
   }
 
   .menu-toggle {
@@ -1377,6 +1378,11 @@ pre {
     justify-self: end;
     justify-content: flex-end;
     flex-wrap: wrap;
+  }
+
+  .section-head-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .top-tab--user {
@@ -1409,6 +1415,24 @@ pre {
   .profile-hero {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .profile-chip-row,
+  .profile-hero-actions,
+  .profile-cta-stack,
+  .card-actions,
+  .detail-actions,
+  .hero-actions {
+    width: 100%;
+  }
+
+  .profile-chip-row > *,
+  .profile-hero-actions > *,
+  .profile-cta-stack > *,
+  .card-actions > *,
+  .detail-actions > *,
+  .hero-actions > * {
+    flex: 1 1 100%;
   }
 
   .admin-user-meta {
@@ -1468,6 +1492,20 @@ pre {
   .list-metrics {
     justify-items: start;
   }
+
+  .profile-shortcut,
+  .highlight-card,
+  .list-card,
+  .macro-box,
+  .settings-row {
+    border-radius: 22px;
+  }
+
+  .panel-scroll--notifications,
+  .panel-scroll--list,
+  .panel-scroll--queue {
+    max-height: 360px;
+  }
 }
 
 @media (max-width: 560px) {
@@ -1515,5 +1553,61 @@ pre {
 
   .brand-copy strong {
     font-size: 1.1rem;
+  }
+
+  .brand-mark {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+  }
+
+  .hero-card {
+    min-height: 0;
+    padding: 22px 18px;
+  }
+
+  .hero-copy h1,
+  .detail-hero h1,
+  .auth-card h1,
+  .auth-showcase h1 {
+    font-size: clamp(1.85rem, 10vw, 2.5rem);
+  }
+
+  .discover-toolbar,
+  .admin-macro-grid,
+  .profile-stat-grid,
+  .profile-shortcut-grid,
+  .detail-grid,
+  .compare-grid,
+  .macro-grid,
+  .profile-layout,
+  .admin-layout,
+  .rail,
+  .restaurant-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-field input,
+  .profile-field select,
+  .search-shell,
+  .topnav a,
+  .top-tab {
+    min-height: 48px;
+  }
+
+  .auth-layout {
+    padding: 16px 12px;
+  }
+
+  .auth-card-panel {
+    padding: 22px 16px 24px;
+  }
+
+  .auth-card-header h2 {
+    font-size: 2.1rem;
+  }
+
+  .panel-scroll {
+    padding-right: 2px;
   }
 }

@@ -1,4 +1,4 @@
-import { Navigate } from "react-router";
+import { useNavigate } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -59,6 +59,7 @@ function timeValue(value?: string) {
 }
 
 export default function AdminRoute() {
+  const navigate = useNavigate();
   const { user, isReady } = useAppState();
   const [restaurants, setRestaurants] = useState<RestaurantSummary[]>([]);
   const [users, setUsers] = useState<ManageUser[]>([]);
@@ -198,12 +199,19 @@ export default function AdminRoute() {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  useEffect(() => {
+    if (!isReady) return;
+    if (!user) {
+      navigate("/login", { replace: true });
+      return;
+    }
+    if (!isManager) {
+      navigate("/discover", { replace: true });
+    }
+  }, [isManager, isReady, navigate, user]);
 
-  if (!isManager) {
-    return <Navigate to="/discover" replace />;
+  if (!user || !isManager) {
+    return null;
   }
 
   async function handleRestaurantSubmit(event: React.FormEvent<HTMLFormElement>) {
