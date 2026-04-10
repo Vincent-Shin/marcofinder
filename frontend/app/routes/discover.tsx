@@ -1,15 +1,16 @@
 import { Link, useNavigate } from "react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { DiscoverCardVisual } from "../components/food-visual";
 import { fetchItems, fetchRestaurants } from "../lib/api";
 import { useAppState } from "../lib/app-state";
 import {
   getCategoryMeta,
-  imageLabel,
   normalizeCategory,
   topHighlightCategories,
   type HighlightCategory,
 } from "../lib/catalog";
+import { mealPath, restaurantPath } from "../lib/paths";
 import { describeRestaurant } from "../lib/restaurants";
 import {
   compactMacros,
@@ -128,13 +129,10 @@ function SectionRow({
               <button
                 type="button"
                 className={`card-visual category-${category.key}`}
-                onClick={() =>
-                  navigate(`/meals/${encodeURIComponent(item.unique_key)}`)
-                }
+                onClick={() => navigate(mealPath(item.unique_key))}
                 aria-label={`Preview ${item.item_name}`}
               >
-                <span className="card-visual-icon">{imageLabel(item)}</span>
-                <span className="image-chip">Preview</span>
+                <DiscoverCardVisual item={item} />
               </button>
               <div className="visual-copy">
                 <div className="card-top">
@@ -160,9 +158,7 @@ function SectionRow({
                   <button
                     type="button"
                     className="card-main"
-                    onClick={() =>
-                      navigate(`/meals/${encodeURIComponent(item.unique_key)}`)
-                    }
+                    onClick={() => navigate(mealPath(item.unique_key))}
                   >
                     <p className="restaurant-label">{item.restaurant_name}</p>
                     <h3>{item.item_name}</h3>
@@ -185,7 +181,7 @@ function SectionRow({
 
               <div className="card-actions">
                 <Link
-                  to={`/restaurants/${item.restaurant_id}`}
+                  to={restaurantPath(item.restaurant_id)}
                   className="ghost-pill restaurant-action"
                 >
                   Restaurant
@@ -427,7 +423,7 @@ export default function DiscoverRoute() {
           {topRestaurants.map((restaurant) => (
             <Link
               key={restaurant.restaurant_id}
-              to={`/restaurants/${restaurant.restaurant_id}`}
+              to={restaurantPath(restaurant.restaurant_id)}
               className={`restaurant-tile ${
                 restaurantId === restaurant.restaurant_id ? "is-active" : ""
               }`}

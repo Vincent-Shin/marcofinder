@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { useEffect, useState } from "react";
 
+import { FoodVisualCompare } from "../components/food-visual";
 import { fetchItemByKey } from "../lib/api";
 import { useAppState } from "../lib/app-state";
 import { isReasonableItem, money } from "../lib/scoring";
@@ -61,7 +62,8 @@ export default function CompareRoute() {
       ) : (
         <section className="compare-grid">
           {items.map((item) => (
-            <article key={item.unique_key} className="section-shell">
+            <article key={item.unique_key} className="section-shell compare-card">
+              <FoodVisualCompare item={item} />
               <div className="section-head">
                 <div>
                   <p className="eyebrow">{item.restaurant_name}</p>

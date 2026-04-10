@@ -1,8 +1,11 @@
 import { Link, useParams } from "react-router";
 import { useEffect, useState } from "react";
 
+import { FoodVisualHero } from "../components/food-visual";
+import { NutritionSourceLink } from "../components/nutrition-source-link";
 import { fetchItemByKey, reportItemIssue, uploadSubmissionAsset } from "../lib/api";
 import { useAppState } from "../lib/app-state";
+import { restaurantPath } from "../lib/paths";
 import { describeRestaurant } from "../lib/restaurants";
 import { isReasonableItem, money } from "../lib/scoring";
 import type { ItemIssueType, MenuItem } from "../lib/types";
@@ -109,8 +112,9 @@ export default function MealRoute() {
 
       {item ? (
         <>
-          <div className="detail-hero">
-            <div>
+          <div className="detail-hero detail-hero--meal">
+            <FoodVisualHero item={item} />
+            <div className="detail-hero__copy">
               <p className="eyebrow">{item.restaurant_name}</p>
               <h1>{item.item_name}</h1>
               <p>
@@ -118,9 +122,12 @@ export default function MealRoute() {
                 {item.portion ? ` | ${item.portion}` : ""}
               </p>
               <p>{item.description || describeRestaurant(item.restaurant_id, item.restaurant_name)}</p>
+              <p className="meal-source-line">
+                <NutritionSourceLink url={item.source_url} />
+              </p>
             </div>
             <div className="detail-actions">
-              <Link to={`/restaurants/${item.restaurant_id}`} className="ghost-pill">
+              <Link to={restaurantPath(item.restaurant_id)} className="ghost-pill">
                 Restaurant page
               </Link>
               <button
@@ -215,6 +222,10 @@ export default function MealRoute() {
                 <div>
                   <strong>Category</strong>
                   <p>{item.category || "Uncategorized"}</p>
+                </div>
+                <div>
+                  <strong>Nutrition source</strong>
+                  <NutritionSourceLink url={item.source_url} />
                 </div>
                 {item.description ? (
                   <div>
@@ -314,7 +325,9 @@ export default function MealRoute() {
                     </div>
                     <div>
                       <span>Source</span>
-                      <strong>{item.source_url ? "Restaurant source" : "Dataset record"}</strong>
+                      <div className="issue-source-cell">
+                        <NutritionSourceLink url={item.source_url} />
+                      </div>
                     </div>
                   </div>
 

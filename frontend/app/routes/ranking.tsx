@@ -1,9 +1,11 @@
 import { Link, useNavigate, useParams } from "react-router";
 import { useEffect, useMemo, useState } from "react";
 
+import { FoodVisualThumb } from "../components/food-visual";
 import { fetchItems } from "../lib/api";
 import { useAppState } from "../lib/app-state";
 import { getCategoryMeta } from "../lib/catalog";
+import { mealPath, restaurantPath } from "../lib/paths";
 import {
   compactMacros,
   isReasonableItem,
@@ -176,15 +178,14 @@ export default function RankingRoute() {
               const category = getCategoryMeta(item.category);
 
               return (
-                <article key={item.unique_key} className="list-card">
+                <article key={item.unique_key} className="list-card list-card--media">
                   <button
                     type="button"
-                    className="list-main"
-                    onClick={() =>
-                      navigate(`/meals/${encodeURIComponent(item.unique_key)}`)
-                    }
+                    className="list-main list-main--with-thumb"
+                    onClick={() => navigate(mealPath(item.unique_key))}
                   >
-                    <div>
+                    <FoodVisualThumb item={item} />
+                    <div className="list-main__text">
                       <p className="restaurant-label">{item.restaurant_name}</p>
                       <h3>{item.item_name}</h3>
                       <p>{category.label}</p>
@@ -203,7 +204,7 @@ export default function RankingRoute() {
 
                   <div className="card-actions">
                     <Link
-                      to={`/restaurants/${item.restaurant_id}`}
+                      to={restaurantPath(item.restaurant_id)}
                       className="ghost-pill restaurant-action"
                     >
                       Restaurant

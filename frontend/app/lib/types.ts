@@ -20,6 +20,8 @@ export type MenuItem = {
   macros?: MacroMap;
   description?: string | null;
   nutrition_invalid?: boolean;
+  /** Optional photo URL (absolute http(s) or /uploads/... served by API). */
+  image_url?: string | null;
 };
 
 export type RestaurantSummary = {
@@ -28,6 +30,7 @@ export type RestaurantSummary = {
   item_count: number;
   priced_count: number;
   description?: string;
+  restaurant_image_url?: string | null;
 };
 
 export type UserRecord = {

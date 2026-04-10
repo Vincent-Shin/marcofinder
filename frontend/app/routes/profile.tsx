@@ -1,8 +1,10 @@
 import { Link, Navigate, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 
+import { FoodVisualThumb } from "../components/food-visual";
 import { fetchItemByKey, updatePassword, updateProfile } from "../lib/api";
 import { useAppState } from "../lib/app-state";
+import { mealPath } from "../lib/paths";
 import { money } from "../lib/scoring";
 import type { MenuItem } from "../lib/types";
 
@@ -238,11 +240,12 @@ export default function ProfileRoute() {
               {savedItems.map((item) => (
                 <Link
                   key={item.unique_key}
-                  to={`/meals/${encodeURIComponent(item.unique_key)}`}
-                  className="list-card profile-saved-card"
+                  to={mealPath(item.unique_key)}
+                  className="list-card profile-saved-card list-card--media"
                 >
-                  <div className="list-main">
-                    <div>
+                  <div className="list-main list-main--with-thumb">
+                    <FoodVisualThumb item={item} />
+                    <div className="list-main__text">
                       <h3>{item.item_name}</h3>
                       <p>{item.restaurant_name}</p>
                       {item.description ? (

@@ -355,7 +355,7 @@ def validate_item_payload(data):
         "sugar_g": clean_non_negative_number(macros.get("sugar_g"), "sugar_g"),
     }
 
-    return {
+    payload = {
         "restaurant_id": restaurant_id,
         "restaurant_name": restaurant_name,
         "item_name": item_name,
@@ -364,7 +364,10 @@ def validate_item_payload(data):
         "description": description,
         "price_cad": clean_non_negative_number(data.get("price_cad"), "price_cad"),
         "macros": {key: value for key, value in normalized_macros.items() if value is not None},
+        "image_url": clean_optional_url(data.get("image_url"), "image_url"),
+        "source_url": clean_optional_url(data.get("source_url"), "source_url"),
     }
+    return {key: value for key, value in payload.items() if value is not None}
 
 
 def serialize_submission(document):
@@ -1177,6 +1180,7 @@ def get_restaurants():
             "item_count": 0,
             "priced_count": 0,
             "description": entry.get("description", ""),
+            "restaurant_image_url": entry.get("restaurant_image_url"),
         }
 
     for entry in aggregated:
