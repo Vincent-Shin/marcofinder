@@ -1,4 +1,4 @@
-const CACHE_NAME = "macrofinder-cache-v1";
+const CACHE_NAME = "macrofinder-cache-v2";
 const APP_SHELL = [
   "/",
   "/discover",
@@ -60,7 +60,24 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  const cacheableDestinations = ["style", "script", "image", "font"];
+  const isStyleOrScript =
+    request.destination === "style" || request.destination === "script";
+  if (isStyleOrScript) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(request)),
+    );
+    return;
+  }
+
+  const cacheableDestinations = ["image", "font"];
   if (cacheableDestinations.includes(request.destination)) {
     event.respondWith(
       caches.match(request).then((cachedResponse) => {

@@ -24,13 +24,24 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   background:
     radial-gradient(circle at top left, rgba(221, 241, 229, 0.7), transparent 28%),
     radial-gradient(circle at top right, rgba(221, 241, 229, 0.55), transparent 24%),
     linear-gradient(180deg, #fbf7ef 0%, var(--bg) 100%);
   color: var(--text);
   font-family: Inter, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html {
+  width: 100%;
+  font-size: 16px;
+}
+
+body {
+  width: 100%;
 }
 
 a {
@@ -1632,8 +1643,21 @@ pre {
 }
 
 @media (max-width: 760px) {
+  html,
+  body {
+    width: 100vw;
+    min-width: 100vw;
+  }
+
+  .site-shell {
+    width: 100vw;
+    min-width: 100vw;
+  }
+
   .container {
-    width: min(calc(100% - 20px), var(--page-width));
+    width: 100%;
+    max-width: none;
+    padding-inline: 12px;
   }
 
   .site-shell {
@@ -1759,6 +1783,12 @@ pre {
     border-radius: 20px;
   }
 
+  .page-grid,
+  .detail-page {
+    gap: 14px;
+    padding-top: 14px;
+  }
+
   .restaurant-rail,
   .category-rail,
   .metric-chip-row {
@@ -1767,6 +1797,27 @@ pre {
     overflow-x: auto;
     padding-bottom: 8px;
     scrollbar-width: thin;
+  }
+
+  .restaurant-rail {
+    gap: 10px;
+    scroll-snap-type: x mandatory;
+    padding-right: 6px;
+  }
+
+  .restaurant-rail .restaurant-tile {
+    flex: 0 0 min(84vw, 260px);
+    min-width: min(84vw, 260px);
+    scroll-snap-align: start;
+  }
+
+  .restaurant-tile strong {
+    font-size: 1rem;
+    line-height: 1.12;
+  }
+
+  .restaurant-tile-copy {
+    font-size: 0.9rem;
   }
 
   .rail {
@@ -1792,7 +1843,6 @@ pre {
 
   .detail-hero,
   .section-head,
-  .list-main,
   .settings-row,
   .profile-hero {
     flex-direction: column;
@@ -1813,7 +1863,7 @@ pre {
   .card-actions > .ghost-pill,
   .card-actions > .restaurant-action {
     min-height: 40px;
-    font-size: 0.84rem;
+    font-size: 0.9rem;
   }
 
   .modal-backdrop {
@@ -1933,6 +1983,18 @@ pre {
     gap: 14px;
     padding-top: 16px;
     padding-bottom: 32px;
+  }
+
+  .hero-copy p,
+  .list-description,
+  .profile-note {
+    font-size: 0.94rem;
+  }
+
+  .category-chip,
+  .metric-chip {
+    min-height: 38px;
+    font-size: 0.86rem;
   }
 
   .report-modal {
@@ -2113,4 +2175,104 @@ pre {
 
 .profile-saved-card .list-main--with-thumb {
   align-items: center;
+}
+
+/* Keep this at the end so it wins over base component styles on phones. */
+@media (max-width: 760px) {
+  .detail-hero--with-media,
+  .detail-hero--meal {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .food-visual--hero {
+    max-width: 100%;
+  }
+
+  .food-visual--restaurant-hero {
+    width: 96px;
+    height: 96px;
+    border-radius: 20px;
+  }
+
+  .food-visual--thumb {
+    width: 72px;
+    height: 72px;
+  }
+
+  .discover-visual-wrap,
+  .card-visual--discover {
+    height: 152px;
+  }
+
+  .list-main--with-thumb {
+    grid-template-columns: 72px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
+  }
+
+  .list-main--with-thumb .list-metrics {
+    grid-column: 1 / -1;
+    justify-items: start;
+    margin-top: 2px;
+  }
+
+  .card-actions > .primary-pill,
+  .card-actions > .ghost-pill,
+  .card-actions > .restaurant-action,
+  .card-actions > .save-button,
+  .card-actions > .item-save-pill {
+    width: 100%;
+  }
+
+  .modal-backdrop {
+    align-items: end;
+  }
+
+  .report-modal {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .container {
+    width: 100%;
+    padding-inline: 10px;
+  }
+
+  .mobile-dock {
+    left: 6px;
+    right: 6px;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .mobile-dock-link {
+    min-height: 44px;
+    font-size: 0.78rem;
+    border-radius: 12px;
+  }
+
+  .section-shell,
+  .hero-card,
+  .loading-card,
+  .detail-hero {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(1.5rem, 9vw, 2rem);
+  }
+
+  .profile-chip {
+    font-size: 0.84rem;
+    padding: 8px 11px;
+  }
+
+  .restaurant-rail .restaurant-tile {
+    flex-basis: min(86vw, 248px);
+    min-width: min(86vw, 248px);
+  }
 }
