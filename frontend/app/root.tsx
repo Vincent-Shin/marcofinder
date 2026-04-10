@@ -149,15 +149,15 @@ function Shell() {
 
             <div className="top-actions">
               {user ? (
-                <Link to="/profile" className="top-tab top-tab--user">
+                <Link to="/profile" className="top-tab top-tab--user top-tab--mobile-profile">
                   {user.name}
                 </Link>
               ) : (
                 <>
-                  <Link to="/login" className="top-tab">
+                  <Link to="/login" className="top-tab top-tab--mobile-profile">
                     Log in
                   </Link>
-                  <Link to="/signup" className="top-tab top-tab--accent">
+                  <Link to="/signup" className="top-tab top-tab--accent top-tab--desktop-only">
                     Sign up
                   </Link>
                 </>
@@ -165,7 +165,7 @@ function Shell() {
               {!installed && installPrompt ? (
                 <button
                   type="button"
-                  className="top-tab top-tab--accent"
+                  className="top-tab top-tab--accent top-tab--desktop-only"
                   onClick={() => void handleInstall()}
                 >
                   Install
@@ -190,35 +190,17 @@ function Shell() {
       {!isAuthPage ? (
         <nav className="mobile-dock" aria-label="Mobile navigation">
           <NavLink to="/discover" className="mobile-dock-link">
-            <span className="mobile-dock-icon" aria-hidden="true">
-              Home
-            </span>
-            <span className="mobile-dock-label">Discover</span>
+            Home
           </NavLink>
           <NavLink to="/compare" className="mobile-dock-link">
-            <span className="mobile-dock-icon" aria-hidden="true">
-              Compare
-            </span>
-            <span className="mobile-dock-label">Compare</span>
+            Compare
             {compareKeys.length ? (
               <span className="mobile-dock-count">{compareKeys.length}</span>
             ) : null}
           </NavLink>
-          {isManager ? (
-            <NavLink to="/admin" className="mobile-dock-link">
-              <span className="mobile-dock-icon" aria-hidden="true">
-                Admin
-              </span>
-              <span className="mobile-dock-label">Manage</span>
-            </NavLink>
-          ) : (
-            <NavLink to={user ? "/profile" : "/login"} className="mobile-dock-link">
-              <span className="mobile-dock-icon" aria-hidden="true">
-                {user ? "Me" : "Sign in"}
-              </span>
-              <span className="mobile-dock-label">{user ? "Profile" : "Login"}</span>
-            </NavLink>
-          )}
+          <NavLink to="/admin" className="mobile-dock-link">
+            Manage
+          </NavLink>
         </nav>
       ) : null}
     </div>

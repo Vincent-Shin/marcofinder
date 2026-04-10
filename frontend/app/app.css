@@ -256,23 +256,15 @@ button {
   color: var(--muted);
 }
 
+.top-tab--desktop-only {
+  display: inline-flex;
+}
+
 .mobile-dock-link--button {
   border: 1px solid transparent;
   background: rgba(255, 255, 255, 0.78);
   font: inherit;
   color: var(--muted);
-}
-
-.mobile-dock-icon {
-  font-size: 0.72rem;
-  line-height: 1;
-  color: var(--muted);
-}
-
-.mobile-dock-label {
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1;
 }
 
 .mobile-dock-count {
@@ -1721,7 +1713,7 @@ pre {
 
   .topbar-inner {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 8px;
     padding: 10px 0;
@@ -1747,6 +1739,28 @@ pre {
   }
 
   .top-actions {
+    display: inline-flex;
+    justify-self: end;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .top-actions .top-tab {
+    display: none;
+  }
+
+  .top-actions .top-tab--mobile-profile {
+    display: inline-flex;
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 12px;
+    font-size: 0.84rem;
+    box-shadow: none;
+    min-width: 0;
+  }
+
+  .top-actions .top-tab--desktop-only {
     display: none;
   }
 
@@ -1778,15 +1792,16 @@ pre {
     border-radius: 12px;
     border: 1px solid transparent;
     display: inline-flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
-    gap: 5px;
-    font-size: 0.82rem;
+    gap: 6px;
+    font-size: 0.84rem;
     font-weight: 700;
     background: rgba(255, 255, 255, 0.84);
     text-align: center;
     position: relative;
+    line-height: 1;
   }
 
   .mobile-dock-link[aria-current="page"] {
@@ -1795,17 +1810,11 @@ pre {
     border-color: rgba(47, 122, 89, 0.24);
   }
 
-  .mobile-dock-link[aria-current="page"] .mobile-dock-icon,
-  .mobile-dock-link[aria-current="page"] .mobile-dock-label {
-    color: var(--accent-dark);
-  }
-
   .mobile-dock-count {
-    position: absolute;
-    top: 5px;
-    right: 6px;
-    min-width: 18px;
-    height: 18px;
+    position: static;
+    min-width: 17px;
+    height: 17px;
+    margin-left: 2px;
     font-size: 0.66rem;
   }
 
@@ -2065,6 +2074,12 @@ pre {
     align-items: flex-start;
   }
 
+  .topbar .top-actions {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
   .auth-card-header,
   .auth-form--rebuilt,
   .auth-switch--centered {
@@ -2086,6 +2101,11 @@ pre {
   .search-shell {
     width: 100%;
     text-align: center;
+    justify-content: center;
+  }
+
+  .topbar .top-tab--mobile-profile {
+    width: auto;
     justify-content: center;
   }
 
