@@ -1,9 +1,12 @@
 import { Link, useNavigate, useParams } from "react-router";
 import { useEffect, useMemo, useState } from "react";
 
+import { FoodVisualThumb, RestaurantHeroVisual } from "../components/food-visual";
 import { fetchItems, fetchRestaurants } from "../lib/api";
 import { useAppState } from "../lib/app-state";
 import { getCategoryMeta, normalizeCategory } from "../lib/catalog";
+import { resolveRestaurantImageUrl } from "../lib/media";
+import { mealPath } from "../lib/paths";
 import { describeRestaurant } from "../lib/restaurants";
 import { compactMacros, isReasonableItem, money, proteinValue } from "../lib/scoring";
 import type { MenuItem, RestaurantSummary } from "../lib/types";
@@ -68,9 +71,15 @@ export default function RestaurantRoute() {
     };
   }, [items]);
 
+  const heroImage = resolveRestaurantImageUrl(restaurant);
+
   return (
     <main className="container detail-page">
-      <div className="detail-hero">
+      <div className="detail-hero detail-hero--with-media">
+        <RestaurantHeroVisual
+          imageUrl={heroImage}
+          label={restaurant?.restaurant_name || restaurantId}
+        />
         <div>
           <p className="eyebrow">Restaurant</p>
           <h1>{restaurant?.restaurant_name || restaurantId}</h1>
@@ -111,15 +120,14 @@ export default function RestaurantRoute() {
             const isCompared = compareKeys.includes(item.unique_key);
             const isSaved = savedKeys.includes(item.unique_key);
             return (
-              <article key={item.unique_key} className="list-card">
+              <article key={item.unique_key} className="list-card list-card--media">
                 <button
                   type="button"
-                  className="list-main"
-                  onClick={() =>
-                    navigate(`/meals/${encodeURIComponent(item.unique_key)}`)
-                  }
+                  className="list-main list-main--with-thumb"
+                  onClick={() => navigate(mealPath(item.unique_key))}
                 >
-                  <div>
+                  <FoodVisualThumb item={item} />
+                  <div className="list-main__text">
                     <h3>{item.item_name}</h3>
                     <p>{item.category || "uncategorized"}</p>
                     {item.description ? (
