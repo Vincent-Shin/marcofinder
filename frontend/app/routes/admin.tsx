@@ -5,6 +5,7 @@ import {
   createItem,
   createItemSubmission,
   createRestaurant,
+  createRestaurantSubmission,
   fetchAdminSubmissions,
   fetchAdminUsers,
   fetchNotifications,
@@ -12,11 +13,14 @@ import {
   fetchRestaurants,
   requestRestaurantAccess,
   reviewSubmission,
+  uploadSubmissionAsset,
   updateUserRole,
 } from "../lib/api";
 import { useAppState } from "../lib/app-state";
 import type {
+  MenuItem,
   NotificationRecord,
+  RestaurantListingPayload,
   RestaurantSummary,
   SubmissionRecord,
   UserRecord,
@@ -34,22 +38,36 @@ function niceDate(value?: string) {
 }
 
 function submissionTypeLabel(submission: SubmissionRecord) {
-  return submission.type === "restaurant_access"
-    ? "Restaurant access request"
-    : "Menu item submission";
+  if (submission.type === "restaurant_access") return "Restaurant access request";
+  if (submission.type === "restaurant_listing") return "Restaurant listing request";
+  return "Menu item submission";
 }
 
 function submissionTitle(submission: SubmissionRecord) {
   if (submission.type === "restaurant_access") {
     return `Access request for ${submission.restaurant_name || submission.restaurant_id || "restaurant"}`;
   }
-  return submission.payload?.item_name || "Menu item submission";
+  if (submission.type === "restaurant_listing") {
+    const payload = submission.payload as RestaurantListingPayload | null | undefined;
+    return `Listing: ${payload?.restaurant_name || submission.restaurant_name || "restaurant"}`;
+  }
+  return menuItemPayload(submission)?.item_name || "Menu item submission";
 }
 
 function submissionReviewLabel(submission: SubmissionRecord) {
-  return submission.type === "restaurant_access"
-    ? "Reason for approval or decline"
-    : "Reason for approval or decline / menu review note";
+  return submission.type === "menu_item"
+    ? "Reason for approval or decline / menu review note"
+    : "Reason for approval or decline";
+}
+
+function restaurantListingPayload(submission: SubmissionRecord) {
+  if (submission.type !== "restaurant_listing") return null;
+  return (submission.payload || null) as RestaurantListingPayload | null;
+}
+
+function menuItemPayload(submission: SubmissionRecord) {
+  if (submission.type !== "menu_item") return null;
+  return (submission.payload || null) as Partial<MenuItem> | null;
 }
 
 function timeValue(value?: string) {
@@ -82,6 +100,26 @@ export default function AdminRoute() {
   const [requestRestaurantId, setRequestRestaurantId] = useState("");
   const [requestNote, setRequestNote] = useState("");
 
+  const [listingRestaurantName, setListingRestaurantName] = useState("");
+  const [listingOwnerName, setListingOwnerName] = useState("");
+  const [listingRole, setListingRole] = useState("Owner");
+  const [listingEmail, setListingEmail] = useState("");
+  const [listingPhone, setListingPhone] = useState("");
+  const [listingWebsite, setListingWebsite] = useState("");
+  const [listingMenuNote, setListingMenuNote] = useState("");
+  const [listingMenuUrl, setListingMenuUrl] = useState("");
+  const [nutritionPdfFile, setNutritionPdfFile] = useState<File | null>(null);
+  const [restaurantImageFile, setRestaurantImageFile] = useState<File | null>(null);
+  const [menuSheetFile, setMenuSheetFile] = useState<File | null>(null);
+  const [itemImageFile, setItemImageFile] = useState<File | null>(null);
+  const [fileInputVersion, setFileInputVersion] = useState(0);
+  const [listingItemName, setListingItemName] = useState("");
+  const [listingItemCategory, setListingItemCategory] = useState("");
+  const [listingItemPrice, setListingItemPrice] = useState("");
+  const [listingItemCalories, setListingItemCalories] = useState("");
+  const [listingItemProtein, setListingItemProtein] = useState("");
+  const [listingItemSodium, setListingItemSodium] = useState("");
+
   const [itemRestaurantId, setItemRestaurantId] = useState("");
   const [itemName, setItemName] = useState("");
   const [itemCategory, setItemCategory] = useState("");
@@ -100,6 +138,12 @@ export default function AdminRoute() {
   const isManager = user?.role === "admin" || user?.role === "restaurant_owner";
   const isAdmin = user?.role === "admin";
   const isOwner = user?.role === "restaurant_owner";
+
+  useEffect(() => {
+    if (!user) return;
+    setListingOwnerName((current) => current || user.name || "");
+    setListingEmail((current) => current || user.email || "");
+  }, [user?.email, user?.name]);
 
   async function loadData() {
     if (!user || !isManager) return;
@@ -267,6 +311,105 @@ export default function AdminRoute() {
     }
   }
 
+  async function handleRestaurantListingSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+
+    let nutritionPdfUrl: string | undefined;
+    let restaurantImageUrl: string | undefined;
+    let menuSheetUrl: string | undefined;
+    let representativeItemImageUrl: string | undefined;
+
+    if (nutritionPdfFile || restaurantImageFile || menuSheetFile || itemImageFile) {
+      setMessage("Uploading files...");
+    }
+    try {
+      const [nutritionUpload, restaurantImageUpload, menuSheetUpload, itemImageUpload] =
+        await Promise.all([
+          nutritionPdfFile
+            ? uploadSubmissionAsset(nutritionPdfFile, "nutrition_pdf")
+            : Promise.resolve(null),
+          restaurantImageFile
+            ? uploadSubmissionAsset(restaurantImageFile, "restaurant_image")
+            : Promise.resolve(null),
+          menuSheetFile
+            ? uploadSubmissionAsset(menuSheetFile, "menu_sheet")
+            : Promise.resolve(null),
+          itemImageFile
+            ? uploadSubmissionAsset(itemImageFile, "item_image")
+            : Promise.resolve(null),
+        ]);
+
+      nutritionPdfUrl = nutritionUpload?.asset.file_url || nutritionPdfUrl;
+      restaurantImageUrl = restaurantImageUpload?.asset.file_url || restaurantImageUrl;
+      menuSheetUrl = menuSheetUpload?.asset.file_url || menuSheetUrl;
+      representativeItemImageUrl = itemImageUpload?.asset.file_url || representativeItemImageUrl;
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Failed to upload files");
+      setMessage("");
+      return;
+    }
+
+    const representativeItems = listingItemName.trim()
+      ? [
+          {
+            item_name: listingItemName.trim(),
+            category: listingItemCategory.trim() || undefined,
+            price_cad: listingItemPrice ? Number(listingItemPrice) : undefined,
+            image_url: representativeItemImageUrl,
+            macros: {
+              calories: listingItemCalories ? Number(listingItemCalories) : undefined,
+              protein_g: listingItemProtein ? Number(listingItemProtein) : undefined,
+              sodium_mg: listingItemSodium ? Number(listingItemSodium) : undefined,
+            },
+          },
+        ]
+      : [];
+
+    try {
+      await createRestaurantSubmission({
+        restaurant_name: listingRestaurantName.trim(),
+        owner_full_name: listingOwnerName.trim(),
+        owner_role: listingRole.trim(),
+        restaurant_email: listingEmail.trim(),
+        phone: listingPhone.trim(),
+        official_website: listingWebsite.trim() || undefined,
+        menu_note: listingMenuNote.trim() || undefined,
+        nutrition_pdf_url: nutritionPdfUrl,
+        menu_url: listingMenuUrl.trim() || undefined,
+        restaurant_image_url: restaurantImageUrl,
+        menu_sheet_url: menuSheetUrl,
+        representative_items: representativeItems,
+      });
+      setMessage("Restaurant listing submitted for admin review.");
+      setListingRestaurantName("");
+      setListingRole("Owner");
+      setListingPhone("");
+      setListingWebsite("");
+      setListingMenuNote("");
+      setListingMenuUrl("");
+      setNutritionPdfFile(null);
+      setRestaurantImageFile(null);
+      setMenuSheetFile(null);
+      setItemImageFile(null);
+      setFileInputVersion((current) => current + 1);
+      setListingItemName("");
+      setListingItemCategory("");
+      setListingItemPrice("");
+      setListingItemCalories("");
+      setListingItemProtein("");
+      setListingItemSodium("");
+      await loadData();
+    } catch (submitError) {
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Failed to submit restaurant listing",
+      );
+    }
+  }
+
   async function handleItemSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -352,8 +495,8 @@ export default function AdminRoute() {
         </div>
         <p className="profile-note">
           {isAdmin
-            ? "Admins create restaurants, assign owners, and review pending access or menu submissions."
-            : "Owners request restaurant access, receive admin notifications, and submit menu changes for review."}
+            ? "Admins create restaurants, assign owners, and review pending access, listing, or menu submissions."
+            : "Owners can request access, submit a new restaurant listing, and send menu updates for review."}
         </p>
         <p className="profile-note session-note">
           Tabs in the same browser share one login session. To test admin and owner at the same
@@ -548,7 +691,7 @@ export default function AdminRoute() {
               <div className="section-head">
                 <div>
                   <p className="eyebrow">Review Queue</p>
-                  <h2>Accept or decline owner requests</h2>
+                  <h2>Accept or decline owner and listing requests</h2>
                 </div>
               </div>
               {adminSubmissions.length ? (
@@ -578,12 +721,45 @@ export default function AdminRoute() {
                         <p>Request id: {submission.id}</p>
                       </div>
                       {submission.note ? <p>Owner note: {submission.note}</p> : null}
-                      {submission.payload?.item_name ? (
+                      {submission.type === "menu_item" && menuItemPayload(submission)?.item_name ? (
                         <p>
-                          Item: {submission.payload.item_name} | Portion:{" "}
-                          {submission.payload.portion || "standard"} | Price:{" "}
-                          {submission.payload.price_cad ?? "n/a"}
+                          Item: {menuItemPayload(submission)?.item_name} | Portion:{" "}
+                          {menuItemPayload(submission)?.portion || "standard"} | Price:{" "}
+                          {menuItemPayload(submission)?.price_cad ?? "n/a"}
                         </p>
+                      ) : null}
+                      {submission.type === "restaurant_listing" ? (
+                        <div className="admin-submission-meta">
+                          <p>
+                            Contact: {restaurantListingPayload(submission)?.owner_full_name} (
+                            {restaurantListingPayload(submission)?.owner_role})
+                          </p>
+                          <p>
+                            Email: {restaurantListingPayload(submission)?.restaurant_email} | Phone:{" "}
+                            {restaurantListingPayload(submission)?.phone}
+                          </p>
+                          {restaurantListingPayload(submission)?.official_website ? (
+                            <p>
+                              Website: {restaurantListingPayload(submission)?.official_website}
+                            </p>
+                          ) : null}
+                          {restaurantListingPayload(submission)?.menu_url ? (
+                            <p>Menu URL: {restaurantListingPayload(submission)?.menu_url}</p>
+                          ) : null}
+                          {restaurantListingPayload(submission)?.nutrition_pdf_url ? (
+                            <p>
+                              Nutrition PDF:{" "}
+                              {restaurantListingPayload(submission)?.nutrition_pdf_url}
+                            </p>
+                          ) : null}
+                          {restaurantListingPayload(submission)?.representative_items?.length ? (
+                            <p>
+                              Sample item:{" "}
+                              {restaurantListingPayload(submission)?.representative_items?.[0]
+                                ?.item_name || "n/a"}
+                            </p>
+                          ) : null}
+                        </div>
                       ) : null}
                       <label className="profile-field">
                         <span>{submissionReviewLabel(submission)}</span>
@@ -641,6 +817,224 @@ export default function AdminRoute() {
 
         {isOwner ? (
           <>
+            <article className="section-shell profile-panel profile-panel--wide">
+              <div className="section-head">
+                <div>
+                  <p className="eyebrow">Restaurant request form</p>
+                  <h2>Submit a new restaurant for approval</h2>
+                </div>
+              </div>
+              <form className="profile-form" onSubmit={handleRestaurantListingSubmit}>
+                <div className="owner-request-grid">
+                  <label className="profile-field">
+                    <span>Restaurant name</span>
+                    <input
+                      value={listingRestaurantName}
+                      onChange={(event) => setListingRestaurantName(event.target.value)}
+                      placeholder="Pacific Protein Kitchen"
+                      required
+                    />
+                  </label>
+                  <label className="profile-field">
+                    <span>Owner full name</span>
+                    <input
+                      value={listingOwnerName}
+                      onChange={(event) => setListingOwnerName(event.target.value)}
+                      placeholder="Avery Singh"
+                      required
+                    />
+                  </label>
+                  <label className="profile-field">
+                    <span>Role</span>
+                    <select
+                      value={listingRole}
+                      onChange={(event) => setListingRole(event.target.value)}
+                    >
+                      <option value="Owner">Owner</option>
+                      <option value="Manager">Manager</option>
+                      <option value="Operator">Operator</option>
+                    </select>
+                  </label>
+                  <label className="profile-field">
+                    <span>Restaurant email</span>
+                    <input
+                      type="email"
+                      value={listingEmail}
+                      onChange={(event) => setListingEmail(event.target.value)}
+                      placeholder="owner@restaurant.ca"
+                      required
+                    />
+                  </label>
+                  <label className="profile-field">
+                    <span>Phone</span>
+                    <input
+                      value={listingPhone}
+                      onChange={(event) => setListingPhone(event.target.value)}
+                      placeholder="(403) 555-0176"
+                      required
+                    />
+                  </label>
+                  <label className="profile-field">
+                    <span>Official website</span>
+                    <input
+                      type="url"
+                      value={listingWebsite}
+                      onChange={(event) => setListingWebsite(event.target.value)}
+                      placeholder="https://restaurant.ca"
+                    />
+                  </label>
+                </div>
+
+                <label className="profile-field">
+                  <span>Short note about your menu</span>
+                  <textarea
+                    value={listingMenuNote}
+                    onChange={(event) => setListingMenuNote(event.target.value)}
+                    placeholder="We focus on bowls, wraps, and portable items with published nutrition."
+                  />
+                </label>
+
+                <div className="owner-request-grid">
+                  <label className="profile-field">
+                    <span>Nutrition PDF</span>
+                    <input
+                      key={`nutrition-${fileInputVersion}`}
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      onChange={(event) =>
+                        setNutritionPdfFile(event.target.files?.[0] || null)
+                      }
+                    />
+                    <small>{nutritionPdfFile ? nutritionPdfFile.name : "No PDF selected"}</small>
+                  </label>
+                  <label className="profile-field">
+                    <span>Menu URL</span>
+                    <input
+                      type="url"
+                      value={listingMenuUrl}
+                      onChange={(event) => setListingMenuUrl(event.target.value)}
+                      placeholder="https://restaurant.ca/menu"
+                    />
+                  </label>
+                  <label className="profile-field">
+                    <span>Restaurant image</span>
+                    <input
+                      key={`restaurant-image-${fileInputVersion}`}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={(event) =>
+                        setRestaurantImageFile(event.target.files?.[0] || null)
+                      }
+                    />
+                    <small>
+                      {restaurantImageFile
+                        ? restaurantImageFile.name
+                        : "No image selected"}
+                    </small>
+                  </label>
+                  <label className="profile-field">
+                    <span>Menu CSV or sheet export</span>
+                    <input
+                      key={`menu-sheet-${fileInputVersion}`}
+                      type="file"
+                      accept=".csv,.tsv,.xlsx,.xls,text/csv"
+                      onChange={(event) =>
+                        setMenuSheetFile(event.target.files?.[0] || null)
+                      }
+                    />
+                    <small>
+                      {menuSheetFile ? menuSheetFile.name : "No file selected"}
+                    </small>
+                  </label>
+                </div>
+
+                <div className="section-shell section-shell--compact owner-item-card">
+                  <div className="section-head">
+                    <div>
+                      <p className="eyebrow">Item 1</p>
+                      <h2>Representative item</h2>
+                    </div>
+                  </div>
+                  <div className="owner-request-grid">
+                    <label className="profile-field">
+                      <span>Item name</span>
+                      <input
+                        value={listingItemName}
+                        onChange={(event) => setListingItemName(event.target.value)}
+                        placeholder="Signature Chicken Wrap"
+                      />
+                    </label>
+                    <label className="profile-field">
+                      <span>Category</span>
+                      <input
+                        value={listingItemCategory}
+                        onChange={(event) => setListingItemCategory(event.target.value)}
+                        placeholder="Wraps"
+                      />
+                    </label>
+                    <label className="profile-field">
+                      <span>Price (CAD)</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={listingItemPrice}
+                        onChange={(event) => setListingItemPrice(event.target.value)}
+                        placeholder="9.49"
+                      />
+                    </label>
+                    <label className="profile-field">
+                      <span>Calories</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={listingItemCalories}
+                        onChange={(event) => setListingItemCalories(event.target.value)}
+                        placeholder="410"
+                      />
+                    </label>
+                    <label className="profile-field">
+                      <span>Protein (g)</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={listingItemProtein}
+                        onChange={(event) => setListingItemProtein(event.target.value)}
+                        placeholder="32"
+                      />
+                    </label>
+                    <label className="profile-field">
+                      <span>Sodium (mg)</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={listingItemSodium}
+                        onChange={(event) => setListingItemSodium(event.target.value)}
+                        placeholder="520"
+                      />
+                    </label>
+                    <label className="profile-field">
+                      <span>Item image</span>
+                      <input
+                        key={`item-image-${fileInputVersion}`}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={(event) => setItemImageFile(event.target.files?.[0] || null)}
+                      />
+                      <small>{itemImageFile ? itemImageFile.name : "No image selected"}</small>
+                    </label>
+                  </div>
+                </div>
+
+                <button type="submit" className="primary-pill">
+                  Submit restaurant listing
+                </button>
+              </form>
+            </article>
+
             <article className="section-shell profile-panel">
               <div className="section-head">
                 <div>
@@ -709,12 +1103,25 @@ export default function AdminRoute() {
                         ) : null}
                       </div>
                       {submission.note ? <p>Your note: {submission.note}</p> : null}
-                      {submission.payload?.item_name ? (
+                      {submission.type === "menu_item" && menuItemPayload(submission)?.item_name ? (
                         <p>
-                          Item: {submission.payload.item_name} | Portion:{" "}
-                          {submission.payload.portion || "standard"} | Price:{" "}
-                          {submission.payload.price_cad ?? "n/a"}
+                          Item: {menuItemPayload(submission)?.item_name} | Portion:{" "}
+                          {menuItemPayload(submission)?.portion || "standard"} | Price:{" "}
+                          {menuItemPayload(submission)?.price_cad ?? "n/a"}
                         </p>
+                      ) : null}
+                      {submission.type === "restaurant_listing" ? (
+                        <div className="admin-submission-meta">
+                          <p>
+                            Requested listing:{" "}
+                            {restaurantListingPayload(submission)?.restaurant_name ||
+                              submission.restaurant_name}
+                          </p>
+                          <p>
+                            Contact email:{" "}
+                            {restaurantListingPayload(submission)?.restaurant_email || "n/a"}
+                          </p>
+                        </div>
                       ) : null}
                       {submission.admin_note ? (
                         <p>Admin note: {submission.admin_note}</p>

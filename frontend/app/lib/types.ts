@@ -44,9 +44,35 @@ export type NotificationRecord = {
   created_at: string;
 };
 
+export type RepresentativeItemDraft = {
+  item_name: string;
+  category?: string | null;
+  portion?: string | null;
+  price_cad?: number | null;
+  image_url?: string | null;
+  description?: string | null;
+  macros?: MacroMap;
+};
+
+export type RestaurantListingPayload = {
+  restaurant_id?: string;
+  restaurant_name: string;
+  owner_full_name: string;
+  owner_role: string;
+  restaurant_email: string;
+  phone: string;
+  official_website?: string | null;
+  menu_note?: string | null;
+  nutrition_pdf_url?: string | null;
+  menu_url?: string | null;
+  restaurant_image_url?: string | null;
+  menu_sheet_url?: string | null;
+  representative_items?: RepresentativeItemDraft[];
+};
+
 export type SubmissionRecord = {
   id: string;
-  type: "restaurant_access" | "menu_item";
+  type: "restaurant_access" | "menu_item" | "restaurant_listing";
   status: "pending" | "approved" | "rejected";
   restaurant_id?: string;
   restaurant_name?: string;
@@ -56,5 +82,5 @@ export type SubmissionRecord = {
   admin_note?: string;
   created_at?: string;
   reviewed_at?: string;
-  payload?: Partial<MenuItem> | null;
+  payload?: Partial<MenuItem> | RestaurantListingPayload | null;
 };

@@ -1,6 +1,7 @@
 import type {
   MenuItem,
   NotificationRecord,
+  RestaurantListingPayload,
   RestaurantSummary,
   SubmissionRecord,
   UserRecord,
@@ -22,6 +23,21 @@ type AuthEnvelope = {
 
 type AdminUserRecord = UserRecord & {
   owned_restaurant_ids: string[];
+};
+
+export type SubmissionAssetKind =
+  | "nutrition_pdf"
+  | "restaurant_image"
+  | "item_image"
+  | "menu_sheet";
+
+type UploadedAsset = {
+  kind: SubmissionAssetKind;
+  file_name: string;
+  stored_name: string;
+  relative_path: string;
+  file_url: string;
+  uploaded_at: string;
 };
 
 async function readJson<T>(response: Response): Promise<T> {
@@ -197,6 +213,29 @@ export async function requestRestaurantAccess(input: {
   note?: string;
 }) {
   const response = await apiFetch("/owner/restaurant-requests", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return readJson<{ message: string; submission: SubmissionRecord }>(response);
+}
+
+export async function uploadSubmissionAsset(file: File, kind: SubmissionAssetKind) {
+  const formData = new FormData();
+  formData.append("kind", kind);
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/uploads`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+  return readJson<{ message: string; asset: UploadedAsset }>(response);
+}
+
+export async function createRestaurantSubmission(
+  input: RestaurantListingPayload & { note?: string },
+) {
+  const response = await apiFetch("/owner/restaurant-submissions", {
     method: "POST",
     body: JSON.stringify(input),
   });

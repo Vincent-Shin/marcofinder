@@ -10,6 +10,10 @@ app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY") or secrets.token_h
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=14)
+app.config["UPLOAD_ROOT"] = os.environ.get("UPLOAD_ROOT") or os.path.join(
+    os.path.dirname(__file__), "uploads"
+)
+app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_UPLOAD_MB", "12")) * 1024 * 1024
 CORS(app, supports_credentials=True)
 
 app.register_blueprint(api)

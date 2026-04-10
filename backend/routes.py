@@ -1,13 +1,16 @@
 import os
+import re
+import uuid
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from urllib.parse import unquote
 
 from bson import ObjectId
-from flask import Blueprint, current_app, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, request, send_from_directory, session
 from itsdangerous import URLSafeTimedSerializer
 from pymongo import ASCENDING
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
 from ai_helper import generate_category_and_description
 from db import menu_items, password_resets, restaurants, submissions, users
@@ -17,6 +20,12 @@ api = Blueprint("api", __name__)
 ITEM_PROJECTION = {"_id": 0}
 USER_PUBLIC_PROJECTION = {"_id": 0, "password_hash": 0}
 MANAGEABLE_ROLES = {"restaurant_owner", "admin"}
+ASSET_EXTENSION_ALLOWLIST = {
+    "nutrition_pdf": {".pdf"},
+    "restaurant_image": {".png", ".jpg", ".jpeg", ".webp"},
+    "item_image": {".png", ".jpg", ".jpeg", ".webp"},
+    "menu_sheet": {".csv", ".tsv", ".xlsx", ".xls"},
+}
 
 
 def normalize_email(value):
@@ -169,6 +178,138 @@ def clean_optional_text(raw):
     return value or None
 
 
+def clean_required_text(raw, field_name):
+    value = str(raw or "").strip()
+    if not value:
+        raise ValueError(f"{field_name} is required")
+    return value
+
+
+def clean_optional_url(raw, field_name):
+    value = str(raw or "").strip()
+    if not value:
+        return None
+    if not value.startswith(("http://", "https://")):
+        raise ValueError(f"{field_name} must start with http:// or https://")
+    return value
+
+
+def build_upload_url(relative_path):
+    upload_path = f"/uploads/{relative_path.replace(os.sep, '/')}"
+    script_root = (request.script_root or "").rstrip("/")
+    path_with_prefix = f"{script_root}{upload_path}" if script_root else upload_path
+    return f"{request.url_root.rstrip('/')}{path_with_prefix}"
+
+
+def save_uploaded_asset(file_storage, kind):
+    if kind not in ASSET_EXTENSION_ALLOWLIST:
+        raise ValueError("invalid upload kind")
+
+    original_name = secure_filename(file_storage.filename or "")
+    extension = os.path.splitext(original_name)[1].lower()
+    if not extension:
+        raise ValueError("uploaded file must include an extension")
+    if extension not in ASSET_EXTENSION_ALLOWLIST[kind]:
+        raise ValueError(f"unsupported file type for {kind}")
+
+    upload_root = current_app.config.get("UPLOAD_ROOT") or os.path.join(
+        os.path.dirname(__file__), "uploads"
+    )
+    target_dir = os.path.join(upload_root, kind)
+    os.makedirs(target_dir, exist_ok=True)
+
+    random_suffix = uuid.uuid4().hex[:12]
+    safe_stem = os.path.splitext(original_name)[0][:72] or "file"
+    stored_name = f"{safe_stem}-{random_suffix}{extension}"
+    absolute_path = os.path.join(target_dir, stored_name)
+    file_storage.save(absolute_path)
+
+    relative_path = os.path.join(kind, stored_name)
+    return {
+        "kind": kind,
+        "file_name": original_name,
+        "stored_name": stored_name,
+        "relative_path": relative_path.replace(os.sep, "/"),
+        "file_url": build_upload_url(relative_path),
+        "uploaded_at": now_iso(),
+    }
+
+
+def slugify_restaurant_id(value):
+    cleaned = re.sub(r"[^a-z0-9]+", "_", str(value or "").strip().lower())
+    cleaned = cleaned.strip("_")
+    return cleaned or "restaurant"
+
+
+def clean_representative_item(raw_item):
+    item_name = str(raw_item.get("item_name") or "").strip()
+    if not item_name:
+        raise ValueError("representative_items[].item_name is required")
+
+    portion = clean_optional_text(raw_item.get("portion"))
+    macros = raw_item.get("macros") or {}
+    normalized_macros = {
+        "calories": clean_non_negative_number(macros.get("calories"), "calories"),
+        "protein_g": clean_non_negative_number(macros.get("protein_g"), "protein_g"),
+        "carbs_g": clean_non_negative_number(macros.get("carbs_g"), "carbs_g"),
+        "fat_g": clean_non_negative_number(macros.get("fat_g"), "fat_g"),
+        "sodium_mg": clean_non_negative_number(macros.get("sodium_mg"), "sodium_mg"),
+        "sugar_g": clean_non_negative_number(macros.get("sugar_g"), "sugar_g"),
+    }
+
+    return {
+        "item_name": item_name,
+        "category": clean_optional_text(raw_item.get("category")),
+        "portion": portion,
+        "description": clean_optional_text(raw_item.get("description")),
+        "price_cad": clean_non_negative_number(raw_item.get("price_cad"), "price_cad"),
+        "image_url": clean_optional_url(raw_item.get("image_url"), "image_url"),
+        "macros": {key: value for key, value in normalized_macros.items() if value is not None},
+    }
+
+
+def validate_restaurant_listing_payload(data, user):
+    restaurant_name = clean_required_text(data.get("restaurant_name"), "restaurant_name")
+    restaurant_id = slugify_restaurant_id(data.get("restaurant_id") or restaurant_name)
+    owner_full_name = clean_required_text(
+        data.get("owner_full_name") or user.get("name"), "owner_full_name"
+    )
+    owner_role = clean_required_text(data.get("owner_role") or "Owner", "owner_role")
+    restaurant_email = normalize_email(data.get("restaurant_email") or user.get("email"))
+    if "@" not in restaurant_email:
+        raise ValueError("restaurant_email must be a valid email")
+
+    representative_items = data.get("representative_items") or []
+    if not isinstance(representative_items, list):
+        raise ValueError("representative_items must be an array")
+
+    cleaned_items = []
+    for raw_item in representative_items[:5]:
+        if not isinstance(raw_item, dict):
+            raise ValueError("representative_items must contain objects")
+        cleaned_items.append(clean_representative_item(raw_item))
+
+    return {
+        "restaurant_id": restaurant_id,
+        "restaurant_name": restaurant_name,
+        "owner_full_name": owner_full_name,
+        "owner_role": owner_role,
+        "restaurant_email": restaurant_email,
+        "phone": clean_required_text(data.get("phone"), "phone"),
+        "official_website": clean_optional_url(data.get("official_website"), "official_website"),
+        "menu_note": clean_optional_text(data.get("menu_note")),
+        "nutrition_pdf_url": clean_optional_url(
+            data.get("nutrition_pdf_url"), "nutrition_pdf_url"
+        ),
+        "menu_url": clean_optional_url(data.get("menu_url"), "menu_url"),
+        "restaurant_image_url": clean_optional_url(
+            data.get("restaurant_image_url"), "restaurant_image_url"
+        ),
+        "menu_sheet_url": clean_optional_url(data.get("menu_sheet_url"), "menu_sheet_url"),
+        "representative_items": cleaned_items,
+    }
+
+
 def validate_item_payload(data):
     restaurant_id = str(data.get("restaurant_id") or "").strip()
     item_name = str(data.get("item_name") or "").strip()
@@ -256,6 +397,41 @@ def find_restaurant_record(restaurant_id):
 @api.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@api.post("/uploads")
+@require_role("restaurant_owner", "admin")
+def upload_asset(user):
+    kind = str(request.form.get("kind") or "").strip()
+    file_storage = request.files.get("file")
+    if not file_storage:
+        return jsonify({"error": "file is required"}), 400
+    if not kind:
+        return jsonify({"error": "kind is required"}), 400
+
+    try:
+        payload = save_uploaded_asset(file_storage, kind)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return jsonify({"message": "upload successful", "asset": payload}), 201
+
+
+@api.get("/uploads/<path:asset_path>")
+def get_uploaded_asset(asset_path):
+    upload_root = current_app.config.get("UPLOAD_ROOT") or os.path.join(
+        os.path.dirname(__file__), "uploads"
+    )
+    safe_root = os.path.abspath(upload_root)
+    target_path = os.path.abspath(os.path.join(safe_root, asset_path))
+    if not target_path.startswith(f"{safe_root}{os.sep}") and target_path != safe_root:
+        return jsonify({"error": "file not found"}), 404
+
+    directory = os.path.dirname(target_path)
+    filename = os.path.basename(target_path)
+    if not os.path.exists(target_path):
+        return jsonify({"error": "file not found"}), 404
+    return send_from_directory(directory, filename)
 
 
 @api.post("/auth/signup")
@@ -620,7 +796,12 @@ def review_submission(user, submission_id):
     if decision == "rejected" and not admin_note:
         return jsonify({"error": "admin_note is required when rejecting a submission"}), 400
 
-    document = submissions.find_one({"_id": ObjectId(submission_id)})
+    try:
+        object_id = ObjectId(submission_id)
+    except Exception:
+        return jsonify({"error": "invalid submission id"}), 400
+
+    document = submissions.find_one({"_id": object_id})
     if not document:
         return jsonify({"error": "submission not found"}), 404
     if document.get("status") != "pending":
@@ -651,6 +832,82 @@ def review_submission(user, submission_id):
             document.get("user_email"),
             "Menu item approved",
             f"Your submission for {payload.get('item_name')} was approved.",
+        )
+    elif decision == "approved" and document.get("type") == "restaurant_listing":
+        payload = document.get("payload") or {}
+        restaurant_name = (
+            str(payload.get("restaurant_name") or document.get("restaurant_name") or "").strip()
+            or "New restaurant"
+        )
+        restaurant_id = slugify_restaurant_id(
+            payload.get("restaurant_id") or document.get("restaurant_id") or restaurant_name
+        )
+        description = (
+            clean_optional_text(payload.get("menu_note"))
+            or clean_optional_text(document.get("note"))
+            or ""
+        )
+
+        restaurants.update_one(
+            {"restaurant_id": restaurant_id},
+            {
+                "$set": {
+                    "restaurant_id": restaurant_id,
+                    "restaurant_name": restaurant_name,
+                    "description": description,
+                    "official_website": clean_optional_text(payload.get("official_website")),
+                    "restaurant_email": clean_optional_text(payload.get("restaurant_email")),
+                    "phone": clean_optional_text(payload.get("phone")),
+                    "updated_at": now_iso(),
+                },
+                "$setOnInsert": {"created_at": now_iso()},
+            },
+            upsert=True,
+        )
+
+        users.update_one(
+            {"email": document.get("user_email")},
+            {
+                "$set": {"role": "restaurant_owner", "updated_at": now_iso()},
+                "$addToSet": {"owned_restaurant_ids": restaurant_id},
+            },
+        )
+
+        representative_items = payload.get("representative_items") or []
+        for raw_item in representative_items:
+            item_name = str(raw_item.get("item_name") or "").strip()
+            if not item_name:
+                continue
+            portion = str(raw_item.get("portion") or "").strip()
+            menu_payload = {
+                "restaurant_id": restaurant_id,
+                "restaurant_name": restaurant_name,
+                "item_name": item_name,
+                "category": clean_optional_text(raw_item.get("category")),
+                "portion": portion,
+                "description": clean_optional_text(raw_item.get("description")),
+                "price_cad": clean_non_negative_number(raw_item.get("price_cad"), "price_cad"),
+                "macros": {
+                    key: clean_non_negative_number(value, key)
+                    for key, value in (raw_item.get("macros") or {}).items()
+                    if value is not None and value != ""
+                },
+                "source_url": clean_optional_text(payload.get("menu_url")),
+                "scraped_at": now_iso(),
+            }
+            menu_payload["unique_key"] = (
+                f"{restaurant_id}|{menu_payload.get('item_name')}|{portion}"
+            ).lower()
+            menu_items.update_one(
+                {"unique_key": menu_payload["unique_key"]},
+                {"$setOnInsert": menu_payload},
+                upsert=True,
+            )
+
+        push_notification(
+            document.get("user_email"),
+            "Restaurant listing approved",
+            f"Your restaurant listing for {restaurant_name} is approved and now available for owner management.",
         )
     else:
         push_notification(
@@ -715,6 +972,54 @@ def request_restaurant_access(user):
         f"{user.get('name')} ({user.get('email')}) requested access to {restaurant_document.get('restaurant_name') or restaurant_id}.",
     )
     return jsonify({"message": "request submitted", "submission": serialize_submission(document)}), 201
+
+
+@api.post("/owner/restaurant-submissions")
+@require_role("restaurant_owner", "admin")
+def create_restaurant_submission(user):
+    data = request.get_json() or {}
+    try:
+        payload = validate_restaurant_listing_payload(data, user)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    existing = submissions.find_one(
+        {
+            "type": "restaurant_listing",
+            "restaurant_id": payload.get("restaurant_id"),
+            "user_email": user.get("email"),
+            "status": "pending",
+        }
+    )
+    if existing:
+        return jsonify({"error": "restaurant submission already pending"}), 409
+
+    document = {
+        "type": "restaurant_listing",
+        "status": "pending",
+        "restaurant_id": payload.get("restaurant_id"),
+        "restaurant_name": payload.get("restaurant_name"),
+        "user_email": user.get("email"),
+        "user_name": user.get("name"),
+        "note": clean_optional_text(data.get("note")) or payload.get("menu_note"),
+        "payload": payload,
+        "created_at": now_iso(),
+    }
+    result = submissions.insert_one(document)
+    document["_id"] = result.inserted_id
+    push_notification_to_admins(
+        "New restaurant listing request",
+        f"{user.get('name')} ({user.get('email')}) submitted a new restaurant request for {payload.get('restaurant_name')}.",
+    )
+    return (
+        jsonify(
+            {
+                "message": "restaurant submitted for review",
+                "submission": serialize_submission(document),
+            }
+        ),
+        201,
+    )
 
 
 @api.get("/owner/submissions")
