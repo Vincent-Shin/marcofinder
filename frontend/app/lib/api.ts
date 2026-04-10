@@ -13,7 +13,7 @@ import type {
 const API_BASE_URL =
   (typeof window !== "undefined" && window.localStorage.getItem("macrofinder_api_base")) ||
   import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? "http://127.0.0.1:5003" : "/api");
+  (import.meta.env.DEV ? "http://127.0.0.1:5000" : "/api");
 
 type AuthEnvelope = {
   message?: string;
