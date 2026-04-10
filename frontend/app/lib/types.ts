@@ -84,3 +84,36 @@ export type SubmissionRecord = {
   reviewed_at?: string;
   payload?: Partial<MenuItem> | RestaurantListingPayload | null;
 };
+
+export type ItemIssueType =
+  | "wrong_nutrition_info"
+  | "wrong_price"
+  | "item_discontinued"
+  | "wrong_category_or_diet_tag"
+  | "wrong_image"
+  | "broken_source_link"
+  | "duplicate_listing"
+  | "other";
+
+export type ItemIssueStatus = "open" | "in_review" | "resolved" | "dismissed";
+
+export type ItemIssueRecord = {
+  id: string;
+  status: ItemIssueStatus;
+  issue_type: ItemIssueType;
+  note?: string | null;
+  attachment_url?: string | null;
+  unique_key: string;
+  restaurant_id: string;
+  restaurant_name: string;
+  item_name: string;
+  item_category?: string | null;
+  price_cad?: number | null;
+  source_url?: string | null;
+  reported_by_name?: string | null;
+  reported_by_email?: string | null;
+  reported_at?: string;
+  reviewed_at?: string;
+  reviewed_by_email?: string | null;
+  manager_note?: string | null;
+};

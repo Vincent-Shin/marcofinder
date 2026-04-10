@@ -36,3 +36,9 @@ submissions = auth_db["submissions"]
 submissions.create_index("status")
 submissions.create_index("type")
 submissions.create_index("user_email")
+
+item_issues = auth_db["item_issues"]
+item_issues.create_index("status")
+item_issues.create_index("restaurant_id")
+item_issues.create_index("unique_key")
+item_issues.create_index("reported_by_email")

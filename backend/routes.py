@@ -8,12 +8,12 @@ from urllib.parse import unquote
 from bson import ObjectId
 from flask import Blueprint, current_app, jsonify, request, send_from_directory, session
 from itsdangerous import URLSafeTimedSerializer
-from pymongo import ASCENDING
+from pymongo import ASCENDING, DESCENDING
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 from ai_helper import generate_category_and_description
-from db import menu_items, password_resets, restaurants, submissions, users
+from db import item_issues, menu_items, password_resets, restaurants, submissions, users
 
 api = Blueprint("api", __name__)
 
@@ -25,7 +25,19 @@ ASSET_EXTENSION_ALLOWLIST = {
     "restaurant_image": {".png", ".jpg", ".jpeg", ".webp"},
     "item_image": {".png", ".jpg", ".jpeg", ".webp"},
     "menu_sheet": {".csv", ".tsv", ".xlsx", ".xls"},
+    "issue_attachment": {".pdf", ".png", ".jpg", ".jpeg", ".webp"},
 }
+ISSUE_TYPE_ALLOWLIST = {
+    "wrong_nutrition_info",
+    "wrong_price",
+    "item_discontinued",
+    "wrong_category_or_diet_tag",
+    "wrong_image",
+    "broken_source_link",
+    "duplicate_listing",
+    "other",
+}
+ISSUE_STATUS_ALLOWLIST = {"open", "in_review", "resolved", "dismissed"}
 
 
 def normalize_email(value):
@@ -158,6 +170,19 @@ def push_notification_to_admins(title, message):
         if document.get("email")
     ]
     for email in admin_emails:
+        push_notification(email, title, message)
+
+
+def push_notification_to_restaurant_managers(restaurant_id, title, message):
+    manager_emails = [
+        document.get("email")
+        for document in users.find(
+            {"owned_restaurant_ids": restaurant_id},
+            {"email": 1, "_id": 0},
+        )
+        if document.get("email")
+    ]
+    for email in manager_emails:
         push_notification(email, title, message)
 
 
@@ -400,7 +425,7 @@ def health():
 
 
 @api.post("/uploads")
-@require_role("restaurant_owner", "admin")
+@require_auth
 def upload_asset(user):
     kind = str(request.form.get("kind") or "").strip()
     file_storage = request.files.get("file")
@@ -1005,6 +1030,29 @@ def create_restaurant_submission(user):
         "payload": payload,
         "created_at": now_iso(),
     }
+
+
+def serialize_item_issue(document):
+    return {
+        "id": str(document.get("_id")),
+        "status": document.get("status"),
+        "issue_type": document.get("issue_type"),
+        "note": document.get("note"),
+        "attachment_url": document.get("attachment_url"),
+        "unique_key": document.get("unique_key"),
+        "restaurant_id": document.get("restaurant_id"),
+        "restaurant_name": document.get("restaurant_name"),
+        "item_name": document.get("item_name"),
+        "item_category": document.get("item_category"),
+        "price_cad": document.get("price_cad"),
+        "source_url": document.get("source_url"),
+        "reported_by_name": document.get("reported_by_name"),
+        "reported_by_email": document.get("reported_by_email"),
+        "reported_at": document.get("reported_at"),
+        "reviewed_at": document.get("reviewed_at"),
+        "reviewed_by_email": document.get("reviewed_by_email"),
+        "manager_note": document.get("manager_note"),
+    }
     result = submissions.insert_one(document)
     document["_id"] = result.inserted_id
     push_notification_to_admins(
@@ -1200,6 +1248,119 @@ def get_item_by_key(unique_key):
     if not item:
         return jsonify({"error": "item not found"}), 404
     return jsonify(item)
+
+
+@api.post("/items/by-key/<path:unique_key>/issues")
+@require_auth
+def report_item_issue(user, unique_key):
+    item = menu_items.find_one({"unique_key": unquote(unique_key)}, ITEM_PROJECTION)
+    if not item:
+        return jsonify({"error": "item not found"}), 404
+
+    data = request.get_json() or {}
+    issue_type = str(data.get("issue_type") or "").strip()
+    note = clean_optional_text(data.get("note"))
+    attachment_url = clean_optional_url(data.get("attachment_url"), "attachment_url")
+    if issue_type not in ISSUE_TYPE_ALLOWLIST:
+        return jsonify({"error": "invalid issue_type"}), 400
+
+    document = {
+        "status": "open",
+        "issue_type": issue_type,
+        "note": note,
+        "attachment_url": attachment_url,
+        "unique_key": item.get("unique_key"),
+        "restaurant_id": item.get("restaurant_id"),
+        "restaurant_name": item.get("restaurant_name"),
+        "item_name": item.get("item_name"),
+        "item_category": item.get("category"),
+        "price_cad": item.get("price_cad"),
+        "source_url": item.get("source_url"),
+        "reported_by_name": user.get("name"),
+        "reported_by_email": user.get("email"),
+        "reported_at": now_iso(),
+        "manager_note": None,
+    }
+    result = item_issues.insert_one(document)
+    document["_id"] = result.inserted_id
+
+    push_notification_to_admins(
+        "New food listing issue reported",
+        f"{user.get('name')} reported {item.get('item_name')} at {item.get('restaurant_name')}.",
+    )
+    push_notification_to_restaurant_managers(
+        item.get("restaurant_id"),
+        "Food listing issue reported",
+        f"Issue reported for {item.get('item_name')} ({item.get('restaurant_name')}).",
+    )
+    return jsonify({"message": "issue reported", "issue": serialize_item_issue(document)}), 201
+
+
+@api.get("/management/item-issues")
+@require_role("restaurant_owner", "admin")
+def list_item_issues(user):
+    role = user.get("role", "user")
+    status = str(request.args.get("status") or "").strip()
+    restaurant_id = str(request.args.get("restaurant_id") or "").strip()
+
+    query = {}
+    if status:
+        query["status"] = status
+    if role == "admin":
+        if restaurant_id:
+            query["restaurant_id"] = restaurant_id
+    else:
+        owned_restaurant_ids = user.get("owned_restaurant_ids", [])
+        if not owned_restaurant_ids:
+            return jsonify({"issues": []}), 200
+        query["restaurant_id"] = {"$in": owned_restaurant_ids}
+        if restaurant_id and restaurant_id in owned_restaurant_ids:
+            query["restaurant_id"] = restaurant_id
+
+    documents = list(
+        item_issues.find(query).sort("reported_at", DESCENDING).limit(clean_limit(default=200))
+    )
+    return jsonify({"issues": [serialize_item_issue(document) for document in documents]}), 200
+
+
+@api.patch("/management/item-issues/<issue_id>")
+@require_role("restaurant_owner", "admin")
+def update_item_issue(user, issue_id):
+    try:
+        object_id = ObjectId(issue_id)
+    except Exception:
+        return jsonify({"error": "invalid issue id"}), 400
+
+    document = item_issues.find_one({"_id": object_id})
+    if not document:
+        return jsonify({"error": "issue not found"}), 404
+    if not can_manage_restaurant(user, document.get("restaurant_id")):
+        return jsonify({"error": "forbidden"}), 403
+
+    data = request.get_json() or {}
+    next_status = str(data.get("status") or "").strip()
+    manager_note = clean_optional_text(data.get("manager_note"))
+    if next_status and next_status not in ISSUE_STATUS_ALLOWLIST:
+        return jsonify({"error": "invalid status"}), 400
+    if not next_status and manager_note is None:
+        return jsonify({"error": "status or manager_note is required"}), 400
+
+    updates = {"reviewed_at": now_iso(), "reviewed_by_email": user.get("email")}
+    if next_status:
+        updates["status"] = next_status
+    if manager_note is not None:
+        updates["manager_note"] = manager_note
+
+    item_issues.update_one({"_id": object_id}, {"$set": updates})
+    updated = item_issues.find_one({"_id": object_id})
+    if updated and updated.get("reported_by_email"):
+        readable_status = updated.get("status", "updated")
+        push_notification(
+            updated.get("reported_by_email"),
+            "Issue report updated",
+            f"Your report for {updated.get('item_name')} is now {readable_status}.",
+        )
+    return jsonify({"message": "issue updated", "issue": serialize_item_issue(updated)}), 200
 
 
 @api.post("/items/fill-missing-details")

@@ -1,4 +1,7 @@
 import type {
+  ItemIssueRecord,
+  ItemIssueStatus,
+  ItemIssueType,
   MenuItem,
   NotificationRecord,
   RestaurantListingPayload,
@@ -29,7 +32,8 @@ export type SubmissionAssetKind =
   | "nutrition_pdf"
   | "restaurant_image"
   | "item_image"
-  | "menu_sheet";
+  | "menu_sheet"
+  | "issue_attachment";
 
 type UploadedAsset = {
   kind: SubmissionAssetKind;
@@ -188,6 +192,17 @@ export async function fetchItemByKey(uniqueKey: string) {
   return readJson<MenuItem>(response);
 }
 
+export async function reportItemIssue(
+  uniqueKey: string,
+  input: { issue_type: ItemIssueType; note?: string; attachment_url?: string },
+) {
+  const response = await apiFetch(`/items/by-key/${encodeURIComponent(uniqueKey)}/issues`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return readJson<{ message: string; issue: ItemIssueRecord }>(response);
+}
+
 export async function createRestaurant(input: {
   restaurant_id: string;
   restaurant_name: string;
@@ -265,6 +280,28 @@ export async function fetchAdminSubmissions(status = "") {
   if (status) search.set("status", status);
   const response = await apiFetch(`/admin/submissions?${search.toString()}`);
   return readJson<{ submissions: SubmissionRecord[] }>(response);
+}
+
+export async function fetchItemIssues(params?: {
+  status?: ItemIssueStatus;
+  restaurantId?: string;
+}) {
+  const search = new URLSearchParams();
+  if (params?.status) search.set("status", params.status);
+  if (params?.restaurantId) search.set("restaurant_id", params.restaurantId);
+  const response = await apiFetch(`/management/item-issues?${search.toString()}`);
+  return readJson<{ issues: ItemIssueRecord[] }>(response);
+}
+
+export async function updateItemIssueStatus(
+  issueId: string,
+  input: { status?: ItemIssueStatus; manager_note?: string },
+) {
+  const response = await apiFetch(`/management/item-issues/${encodeURIComponent(issueId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  return readJson<{ message: string; issue: ItemIssueRecord }>(response);
 }
 
 export async function updateUserRole(

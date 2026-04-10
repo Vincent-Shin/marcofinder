@@ -6,6 +6,7 @@ import {
   createItemSubmission,
   createRestaurant,
   createRestaurantSubmission,
+  fetchItemIssues,
   fetchAdminSubmissions,
   fetchAdminUsers,
   fetchNotifications,
@@ -14,10 +15,13 @@ import {
   requestRestaurantAccess,
   reviewSubmission,
   uploadSubmissionAsset,
+  updateItemIssueStatus,
   updateUserRole,
 } from "../lib/api";
 import { useAppState } from "../lib/app-state";
 import type {
+  ItemIssueRecord,
+  ItemIssueStatus,
   MenuItem,
   NotificationRecord,
   RestaurantListingPayload,
@@ -76,6 +80,20 @@ function timeValue(value?: string) {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
+function issueTypeLabel(value: string) {
+  const labels: Record<string, string> = {
+    wrong_nutrition_info: "Wrong nutrition info",
+    wrong_price: "Wrong price",
+    item_discontinued: "Item discontinued / unavailable",
+    wrong_category_or_diet_tag: "Wrong category or diet tag",
+    wrong_image: "Wrong image",
+    broken_source_link: "Broken source link",
+    duplicate_listing: "Duplicate listing",
+    other: "Other",
+  };
+  return labels[value] || value;
+}
+
 export default function AdminRoute() {
   const { user, isReady } = useAppState();
   const [restaurants, setRestaurants] = useState<RestaurantSummary[]>([]);
@@ -83,6 +101,7 @@ export default function AdminRoute() {
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [adminSubmissions, setAdminSubmissions] = useState<SubmissionRecord[]>([]);
   const [ownerSubmissions, setOwnerSubmissions] = useState<SubmissionRecord[]>([]);
+  const [itemIssues, setItemIssues] = useState<ItemIssueRecord[]>([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
@@ -134,6 +153,7 @@ export default function AdminRoute() {
   const [itemNote, setItemNote] = useState("");
 
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
+  const [issueNotes, setIssueNotes] = useState<Record<string, string>>({});
 
   const isManager = user?.role === "admin" || user?.role === "restaurant_owner";
   const isAdmin = user?.role === "admin";
@@ -154,15 +174,21 @@ export default function AdminRoute() {
       const notificationResponse = await fetchNotifications();
       setNotifications(notificationResponse.notifications);
       if (isAdmin) {
-        const [usersResponse, submissionsResponse] = await Promise.all([
+        const [usersResponse, submissionsResponse, issuesResponse] = await Promise.all([
           fetchAdminUsers(),
           fetchAdminSubmissions(),
+          fetchItemIssues(),
         ]);
         setUsers(usersResponse.users);
         setAdminSubmissions(submissionsResponse.submissions);
+        setItemIssues(issuesResponse.issues);
       } else {
-        const submissionsResponse = await fetchOwnerSubmissions();
+        const [submissionsResponse, issuesResponse] = await Promise.all([
+          fetchOwnerSubmissions(),
+          fetchItemIssues(),
+        ]);
         setOwnerSubmissions(submissionsResponse.submissions);
+        setItemIssues(issuesResponse.issues);
       }
       setLastUpdated(new Date().toISOString());
     } catch (loadError) {
@@ -233,6 +259,15 @@ export default function AdminRoute() {
       );
     });
   }, [adminSubmissions]);
+
+  const sortedItemIssues = useMemo(() => {
+    return [...itemIssues].sort((left, right) => {
+      const leftOpen = left.status === "open" || left.status === "in_review" ? 0 : 1;
+      const rightOpen = right.status === "open" || right.status === "in_review" ? 0 : 1;
+      if (leftOpen !== rightOpen) return leftOpen - rightOpen;
+      return timeValue(right.reported_at) - timeValue(left.reported_at);
+    });
+  }, [itemIssues]);
 
   if (!isReady) {
     return (
@@ -478,6 +513,21 @@ export default function AdminRoute() {
     }
   }
 
+  async function handleIssueStatusChange(issueId: string, status: ItemIssueStatus) {
+    setError("");
+    setMessage("");
+    try {
+      await updateItemIssueStatus(issueId, {
+        status,
+        manager_note: issueNotes[issueId] || undefined,
+      });
+      setMessage(`Issue marked as ${status}.`);
+      await loadData();
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : "Failed to update issue");
+    }
+  }
+
   return (
     <main className="container page-grid">
       <section className="section-shell">
@@ -563,6 +613,100 @@ export default function AdminRoute() {
               {isAdmin
                 ? "No restaurants yet. Create one below."
                 : "You do not own a restaurant yet. Use the request form below."}
+            </div>
+          )}
+        </article>
+
+        <article className="section-shell profile-panel profile-panel--wide">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Issue Queue</p>
+              <h2>Reported food listing issues</h2>
+            </div>
+          </div>
+          {sortedItemIssues.length ? (
+            <div className="panel-scroll panel-scroll--queue">
+              <div className="admin-table">
+                {sortedItemIssues.map((issue) => (
+                <div key={issue.id} className="list-card admin-submission-card">
+                  <div className="section-head">
+                    <div>
+                      <p className="eyebrow">{issueTypeLabel(issue.issue_type)}</p>
+                      <h2>{issue.item_name}</h2>
+                    </div>
+                    <span
+                      className={`profile-chip submission-status submission-status--${issue.status}`}
+                    >
+                      {issue.status.replace("_", " ")}
+                    </span>
+                  </div>
+                  <div className="admin-submission-meta">
+                    <p>Restaurant: {issue.restaurant_name}</p>
+                    <p>Category: {issue.item_category || "Uncategorized"}</p>
+                    <p>Price: {issue.price_cad ?? "n/a"}</p>
+                    <p>
+                      Reported by: {issue.reported_by_name || "Unknown"} (
+                      {issue.reported_by_email || "n/a"})
+                    </p>
+                    <p>Reported: {niceDate(issue.reported_at)}</p>
+                  </div>
+                  {issue.note ? <p>Reporter note: {issue.note}</p> : null}
+                  {issue.attachment_url ? (
+                    <p>
+                      Attachment:{" "}
+                      <a href={issue.attachment_url} target="_blank" rel="noreferrer">
+                        Open file
+                      </a>
+                    </p>
+                  ) : null}
+                  <label className="profile-field">
+                    <span>Manager note</span>
+                    <input
+                      value={issueNotes[issue.id] ?? issue.manager_note ?? ""}
+                      onChange={(event) =>
+                        setIssueNotes((current) => ({
+                          ...current,
+                          [issue.id]: event.target.value,
+                        }))
+                      }
+                      placeholder="Optional review note for owner/admin team"
+                    />
+                  </label>
+                  <div className="card-actions">
+                    <button
+                      type="button"
+                      className="ghost-pill"
+                      onClick={() => handleIssueStatusChange(issue.id, "in_review")}
+                    >
+                      Mark in review
+                    </button>
+                    <button
+                      type="button"
+                      className="primary-pill"
+                      onClick={() => handleIssueStatusChange(issue.id, "resolved")}
+                    >
+                      Mark resolved
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost-pill"
+                      onClick={() => handleIssueStatusChange(issue.id, "dismissed")}
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                  {issue.reviewed_at ? (
+                    <p className="profile-note">
+                      Reviewed: {niceDate(issue.reviewed_at)} by {issue.reviewed_by_email || "manager"}
+                    </p>
+                  ) : null}
+                </div>
+              ))}
+              </div>
+            </div>
+          ) : (
+            <div className="loading-card panel-empty">
+              No reported issues yet.
             </div>
           )}
         </article>

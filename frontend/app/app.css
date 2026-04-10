@@ -1130,6 +1130,62 @@ button {
   background: rgba(214, 117, 104, 0.18);
 }
 
+.submission-status--open {
+  background: rgba(244, 210, 121, 0.28);
+}
+
+.submission-status--in_review {
+  background: rgba(130, 169, 225, 0.22);
+}
+
+.submission-status--resolved {
+  background: rgba(113, 196, 145, 0.22);
+}
+
+.submission-status--dismissed {
+  background: rgba(180, 180, 180, 0.22);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(31, 35, 30, 0.56);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.report-modal {
+  width: min(760px, 100%);
+  max-height: min(90vh, 920px);
+  overflow: auto;
+}
+
+.issue-context-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface-muted);
+}
+
+.issue-context-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 700;
+}
+
+.issue-context-grid strong {
+  display: block;
+  margin-top: 4px;
+}
+
 .panel-empty {
   min-height: 0;
   padding: 18px 20px;
@@ -1406,7 +1462,8 @@ pre {
   .profile-shortcut-grid,
   .profile-stat-grid,
   .admin-macro-grid,
-  .owner-request-grid {
+  .owner-request-grid,
+  .issue-context-grid {
     grid-template-columns: 1fr;
   }
 
