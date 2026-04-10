@@ -151,6 +151,8 @@ export default function AdminRoute() {
   const [itemSodium, setItemSodium] = useState("");
   const [itemDescription, setItemDescription] = useState("");
   const [itemNote, setItemNote] = useState("");
+  const [itemSubmissionImageFile, setItemSubmissionImageFile] = useState<File | null>(null);
+  const [itemSubmissionImageVersion, setItemSubmissionImageVersion] = useState(0);
 
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
   const [issueNotes, setIssueNotes] = useState<Record<string, string>>({});
@@ -449,6 +451,25 @@ export default function AdminRoute() {
     event.preventDefault();
     setError("");
     setMessage("");
+
+    let itemImageUrl: string | undefined;
+    if (itemSubmissionImageFile) {
+      setMessage("Uploading item image...");
+      try {
+        const uploadResponse = await uploadSubmissionAsset(
+          itemSubmissionImageFile,
+          "item_image",
+        );
+        itemImageUrl = uploadResponse.asset.file_url;
+      } catch (uploadError) {
+        setError(
+          uploadError instanceof Error ? uploadError.message : "Failed to upload item image",
+        );
+        setMessage("");
+        return;
+      }
+    }
+
     const payload = {
       restaurant_id: itemRestaurantId,
       restaurant_name:
@@ -459,6 +480,7 @@ export default function AdminRoute() {
       portion: itemPortion.trim() || undefined,
       price_cad: itemPrice ? Number(itemPrice) : undefined,
       description: itemDescription.trim() || undefined,
+      image_url: itemImageUrl,
       note: itemNote.trim() || undefined,
       macros: {
         calories: itemCalories ? Number(itemCalories) : undefined,
@@ -488,6 +510,8 @@ export default function AdminRoute() {
       setItemSodium("");
       setItemDescription("");
       setItemNote("");
+      setItemSubmissionImageFile(null);
+      setItemSubmissionImageVersion((current) => current + 1);
       await loadData();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Failed to submit item");
@@ -1412,6 +1436,22 @@ export default function AdminRoute() {
                 onChange={(event) => setItemDescription(event.target.value)}
                 placeholder="Short menu description"
               />
+            </label>
+            <label className="profile-field">
+              <span>Item image (optional)</span>
+              <input
+                key={`item-submission-image-${itemSubmissionImageVersion}`}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) =>
+                  setItemSubmissionImageFile(event.target.files?.[0] || null)
+                }
+              />
+              <small>
+                {itemSubmissionImageFile
+                  ? itemSubmissionImageFile.name
+                  : "No image selected"}
+              </small>
             </label>
             {!isAdmin ? (
               <label className="profile-field">
