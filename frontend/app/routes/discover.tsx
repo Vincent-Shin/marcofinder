@@ -128,7 +128,7 @@ function SectionRow({
               <div className="visual-card">
               <button
                 type="button"
-                className={`card-visual category-${category.key}`}
+                className={`card-visual card-visual--discover category-${category.key}`}
                 onClick={() => navigate(mealPath(item.unique_key))}
                 aria-label={`Preview ${item.item_name}`}
               >

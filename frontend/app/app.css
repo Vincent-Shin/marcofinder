@@ -535,6 +535,7 @@ button {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
+  overflow: hidden;
 }
 
 .restaurant-tile {
@@ -629,11 +630,13 @@ button {
   display: grid;
   gap: 14px;
   align-content: start;
+  overflow: hidden;
 }
 
 .visual-card {
   display: grid;
   gap: 14px;
+  overflow: hidden;
 }
 
 .card-visual {
@@ -644,14 +647,18 @@ button {
   border: none;
   appearance: none;
   width: 100%;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.55), transparent 30%),
-    linear-gradient(135deg, rgba(228, 238, 234, 0.95), rgba(214, 230, 219, 0.88));
+  display: block;
   text-align: left;
   cursor: pointer;
+}
+
+.card-visual--discover {
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  width: 100%;
+  height: 180px;
+  display: block;
 }
 
 .card-visual:focus-visible {
@@ -1578,6 +1585,15 @@ pre {
   text-align: left;
 }
 
+.discover-visual-wrap {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+
 @media (max-width: 1100px) {
   .auth-shell {
     grid-template-columns: 1fr;
@@ -1769,6 +1785,11 @@ pre {
     padding: 12px;
   }
 
+  .card-visual--discover {
+    padding: 0;
+    height: 180px;
+  }
+
   .detail-hero,
   .section-head,
   .list-main,
@@ -1939,7 +1960,6 @@ pre {
   }
 }
 
-/* Semi-consistent food imagery, in-app paths, and source links */
 .food-visual {
   position: relative;
   overflow: hidden;
@@ -1952,6 +1972,8 @@ pre {
 }
 
 .food-visual__img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -1971,14 +1993,26 @@ pre {
 }
 
 .food-visual--discover {
-  min-height: 120px;
-  flex: 1;
+  position: relative;
+  width: 100%;
+  height: 100%;
   min-width: 0;
-  align-self: stretch;
+  overflow: hidden;
+  border-radius: 20px;
 }
 
 .card-visual .food-visual--discover {
   border-radius: 20px;
+  overflow: hidden;
+}
+
+.card-visual--discover .image-chip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  left: auto;
+  bottom: auto;
+  z-index: 3;
 }
 
 .food-visual--thumb {

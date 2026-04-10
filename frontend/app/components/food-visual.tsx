@@ -13,7 +13,7 @@ export function DiscoverCardVisual({ item }: { item: MenuItem }) {
   const hasPhoto = Boolean(url) && !failed;
 
   return (
-    <>
+    <div className="discover-visual-wrap">
       <div
         className={`food-visual food-visual--discover category-${category.key}`}
       >
@@ -33,7 +33,7 @@ export function DiscoverCardVisual({ item }: { item: MenuItem }) {
         )}
       </div>
       <span className="image-chip">{hasPhoto ? "Photo" : "Preview"}</span>
-    </>
+    </div>
   );
 }
 
