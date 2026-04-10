@@ -27,17 +27,78 @@ export const links: Route.LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap",
   },
+  { rel: "manifest", href: "/manifest.webmanifest" },
+  { rel: "icon", href: "/favicon.ico" },
+  { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
 ];
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
 
 function Shell() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAppState();
+  const { user, compareKeys } = useAppState();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(
+    null,
+  );
+  const [installed, setInstalled] = useState(false);
+  const isManager = user?.role === "admin" || user?.role === "restaurant_owner";
 
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const standaloneFromMedia = window.matchMedia("(display-mode: standalone)").matches;
+    const standaloneFromNavigator = Boolean((navigator as { standalone?: boolean }).standalone);
+    setInstalled(standaloneFromMedia || standaloneFromNavigator);
+
+    const onBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+    const onInstalled = () => {
+      setInstalled(true);
+      setInstallPrompt(null);
+    };
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator)) return;
+
+    const register = async () => {
+      try {
+        await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      } catch {
+        // keep UI functional even if service worker registration fails
+      }
+    };
+    void register();
+  }, []);
+
+  async function handleInstall() {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const choice = await installPrompt.userChoice;
+    if (choice.outcome === "accepted") {
+      setInstalled(true);
+    }
+    setInstallPrompt(null);
+  }
 
   const isAuthPage =
     location.pathname === "/" ||
@@ -84,6 +145,15 @@ function Shell() {
                   </Link>
                 </>
               )}
+              {!installed && installPrompt ? (
+                <button
+                  type="button"
+                  className="top-tab top-tab--accent"
+                  onClick={() => void handleInstall()}
+                >
+                  Install
+                </button>
+              ) : null}
 
               <button
                 type="button"
@@ -99,6 +169,38 @@ function Shell() {
       ) : null}
 
       <Outlet />
+
+      {!isAuthPage ? (
+        <nav className="mobile-dock" aria-label="Mobile navigation">
+          <NavLink to="/discover" className="mobile-dock-link">
+            Discover
+          </NavLink>
+          <NavLink to="/compare" className="mobile-dock-link">
+            Compare
+            {compareKeys.length ? (
+              <span className="mobile-dock-count">{compareKeys.length}</span>
+            ) : null}
+          </NavLink>
+          {isManager ? (
+            <NavLink to="/admin" className="mobile-dock-link">
+              Manage
+            </NavLink>
+          ) : (
+            <NavLink to={user ? "/profile" : "/login"} className="mobile-dock-link">
+              {user ? "Profile" : "Login"}
+            </NavLink>
+          )}
+          {!installed && installPrompt ? (
+            <button
+              type="button"
+              className="mobile-dock-link mobile-dock-link--button"
+              onClick={() => void handleInstall()}
+            >
+              Install
+            </button>
+          ) : null}
+        </nav>
+      ) : null}
     </div>
   );
 }
@@ -109,6 +211,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#2f7a59" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Macro Finder" />
         <Meta />
         <Links />
       </head>
