@@ -24,7 +24,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  overflow-x: clip;
+  overflow-x: hidden;
   background:
     radial-gradient(circle at top left, rgba(221, 241, 229, 0.7), transparent 28%),
     radial-gradient(circle at top right, rgba(221, 241, 229, 0.55), transparent 24%),
@@ -42,6 +42,28 @@ html {
 
 body {
   width: 100%;
+}
+
+main,
+section,
+article,
+.page-grid,
+.detail-page,
+.discover-page,
+.section-shell,
+.hero-card,
+.loading-card,
+.detail-hero,
+.highlight-card,
+.list-card {
+  min-width: 0;
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
 }
 
 a {
@@ -239,6 +261,18 @@ button {
   background: rgba(255, 255, 255, 0.78);
   font: inherit;
   color: var(--muted);
+}
+
+.mobile-dock-icon {
+  font-size: 0.72rem;
+  line-height: 1;
+  color: var(--muted);
+}
+
+.mobile-dock-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .mobile-dock-count {
@@ -1643,21 +1677,42 @@ pre {
 }
 
 @media (max-width: 760px) {
-  html,
-  body {
-    width: 100vw;
-    min-width: 100vw;
-  }
-
   .site-shell {
-    width: 100vw;
-    min-width: 100vw;
+    width: 100%;
+    min-width: 0;
   }
 
   .container {
     width: 100%;
     max-width: none;
     padding-inline: 12px;
+    min-width: 0;
+  }
+
+  main,
+  .page-grid,
+  .detail-page,
+  .discover-page,
+  .topbar,
+  .topbar-inner,
+  .section-shell,
+  .hero-card,
+  .loading-card,
+  .detail-hero,
+  .list-card,
+  .highlight-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .discover-toolbar,
+  .discover-toolbar > *,
+  .section-head,
+  .section-head > *,
+  .list-main,
+  .list-main__text {
+    min-width: 0;
   }
 
   .site-shell {
@@ -1666,35 +1721,32 @@ pre {
 
   .topbar-inner {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
     align-items: center;
-    gap: 12px;
-    padding: 12px 0;
+    gap: 8px;
+    padding: 10px 0;
   }
 
   .brand {
-    gap: 10px;
-    padding: 8px 12px 8px 8px;
+    gap: 9px;
+    padding: 7px 11px 7px 7px;
+    border-radius: 14px;
+    box-shadow: none;
+    justify-self: start;
   }
 
   .brand-mark {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
   }
 
   .brand-copy strong {
-    font-size: 1rem;
+    font-size: 1.35rem;
+    line-height: 1;
   }
 
   .top-actions {
-    justify-self: end;
-    justify-content: flex-end;
-    flex-wrap: nowrap;
-    gap: 8px;
-  }
-
-  .top-actions .top-tab {
     display: none;
   }
 
@@ -1709,30 +1761,32 @@ pre {
     right: 10px;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
     z-index: 80;
-    min-height: var(--mobile-dock-height);
+    min-height: 66px;
     padding: 8px;
-    border-radius: 18px;
+    border-radius: 16px;
     border: 1px solid rgba(221, 209, 189, 0.9);
-    background: rgba(255, 251, 245, 0.95);
+    background: rgba(255, 251, 245, 0.98);
     backdrop-filter: blur(12px);
     box-shadow: 0 14px 30px rgba(45, 54, 44, 0.18);
     display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(0, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
   }
 
   .mobile-dock-link {
-    min-height: 52px;
-    border-radius: 14px;
+    min-height: 50px;
+    border-radius: 12px;
     border: 1px solid transparent;
     display: inline-flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    font-size: 0.88rem;
+    gap: 5px;
+    font-size: 0.82rem;
     font-weight: 700;
-    background: rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.84);
+    text-align: center;
+    position: relative;
   }
 
   .mobile-dock-link[aria-current="page"] {
@@ -1741,15 +1795,36 @@ pre {
     border-color: rgba(47, 122, 89, 0.24);
   }
 
+  .mobile-dock-link[aria-current="page"] .mobile-dock-icon,
+  .mobile-dock-link[aria-current="page"] .mobile-dock-label {
+    color: var(--accent-dark);
+  }
+
+  .mobile-dock-count {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    min-width: 18px;
+    height: 18px;
+    font-size: 0.66rem;
+  }
+
   .hero-card {
-    padding: 20px;
+    padding: 16px;
     min-height: 0;
-    gap: 18px;
+    gap: 14px;
   }
 
   .hero-copy h1 {
-    font-size: clamp(1.72rem, 8vw, 2.4rem);
-    line-height: 1.02;
+    font-size: clamp(1.5rem, 7vw, 1.95rem);
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+  }
+
+  .hero-copy p {
+    margin-top: 8px;
+    font-size: 0.92rem;
+    line-height: 1.45;
   }
 
   .search-shell span {
@@ -1771,7 +1846,8 @@ pre {
 
   .section-head h2,
   .panel-heading h2 {
-    font-size: 1.22rem;
+    font-size: 1.14rem;
+    line-height: 1.2;
   }
 
   .section-shell,
@@ -1779,8 +1855,8 @@ pre {
   .loading-card,
   .auth-card,
   .detail-hero {
-    padding: 16px;
-    border-radius: 20px;
+    padding: 14px;
+    border-radius: 16px;
   }
 
   .page-grid,
@@ -1800,24 +1876,52 @@ pre {
   }
 
   .restaurant-rail {
-    gap: 10px;
+    gap: 9px;
     scroll-snap-type: x mandatory;
-    padding-right: 6px;
+    padding-right: 2px;
   }
 
   .restaurant-rail .restaurant-tile {
-    flex: 0 0 min(84vw, 260px);
-    min-width: min(84vw, 260px);
+    flex: 0 0 min(74vw, 240px);
+    min-width: min(74vw, 240px);
     scroll-snap-align: start;
+    min-height: 146px;
+    padding: 13px 14px;
   }
 
   .restaurant-tile strong {
-    font-size: 1rem;
-    line-height: 1.12;
+    font-size: 0.95rem;
+    line-height: 1.16;
   }
 
   .restaurant-tile-copy {
-    font-size: 0.9rem;
+    font-size: 0.83rem;
+    line-height: 1.35;
+  }
+
+  .category-rail .category-chip,
+  .metric-chip-row .metric-chip {
+    flex: 0 0 auto;
+  }
+
+  .category-chip {
+    min-height: 36px;
+    padding: 7px 11px;
+    font-size: 0.84rem;
+  }
+
+  .category-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 0.78rem;
+  }
+
+  .metric-chip {
+    min-height: 36px;
+    min-width: 118px;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 7px 10px;
   }
 
   .rail {
@@ -1825,20 +1929,40 @@ pre {
   }
 
   .highlight-card {
-    padding: 14px;
-    border-radius: 20px;
-    gap: 10px;
+    padding: 12px;
+    border-radius: 16px;
+    gap: 9px;
   }
 
   .card-visual {
-    min-height: 132px;
-    border-radius: 18px;
-    padding: 12px;
+    min-height: 116px;
+    border-radius: 14px;
+    padding: 10px;
   }
 
   .card-visual--discover {
     padding: 0;
-    height: 180px;
+    height: 138px;
+  }
+
+  .card-main h3 {
+    font-size: 1rem;
+    line-height: 1.25;
+    margin: 2px 0;
+  }
+
+  .card-main p,
+  .card-category,
+  .restaurant-label {
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  .list-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .detail-hero,
@@ -1862,8 +1986,9 @@ pre {
   .card-actions > .primary-pill,
   .card-actions > .ghost-pill,
   .card-actions > .restaurant-action {
-    min-height: 40px;
-    font-size: 0.9rem;
+    min-height: 38px;
+    font-size: 0.82rem;
+    padding: 6px 10px;
   }
 
   .modal-backdrop {
@@ -1968,14 +2093,14 @@ pre {
     left: 8px;
     right: 8px;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
-    padding: 7px;
+    padding: 6px;
     border-radius: 16px;
   }
 
   .mobile-dock-link {
-    min-height: 48px;
-    font-size: 0.82rem;
-    padding-inline: 6px;
+    min-height: 46px;
+    font-size: 0.78rem;
+    padding-inline: 4px;
   }
 
   .detail-page,
@@ -1988,7 +2113,7 @@ pre {
   .hero-copy p,
   .list-description,
   .profile-note {
-    font-size: 0.94rem;
+    font-size: 0.9rem;
   }
 
   .category-chip,
@@ -2006,7 +2131,7 @@ pre {
   }
 
   .brand-copy strong {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
   }
 
   .detail-hero--meal {

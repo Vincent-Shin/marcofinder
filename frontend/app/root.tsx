@@ -190,32 +190,35 @@ function Shell() {
       {!isAuthPage ? (
         <nav className="mobile-dock" aria-label="Mobile navigation">
           <NavLink to="/discover" className="mobile-dock-link">
-            Discover
+            <span className="mobile-dock-icon" aria-hidden="true">
+              Home
+            </span>
+            <span className="mobile-dock-label">Discover</span>
           </NavLink>
           <NavLink to="/compare" className="mobile-dock-link">
-            Compare
+            <span className="mobile-dock-icon" aria-hidden="true">
+              Compare
+            </span>
+            <span className="mobile-dock-label">Compare</span>
             {compareKeys.length ? (
               <span className="mobile-dock-count">{compareKeys.length}</span>
             ) : null}
           </NavLink>
           {isManager ? (
             <NavLink to="/admin" className="mobile-dock-link">
-              Manage
+              <span className="mobile-dock-icon" aria-hidden="true">
+                Admin
+              </span>
+              <span className="mobile-dock-label">Manage</span>
             </NavLink>
           ) : (
             <NavLink to={user ? "/profile" : "/login"} className="mobile-dock-link">
-              {user ? "Profile" : "Login"}
+              <span className="mobile-dock-icon" aria-hidden="true">
+                {user ? "Me" : "Sign in"}
+              </span>
+              <span className="mobile-dock-label">{user ? "Profile" : "Login"}</span>
             </NavLink>
           )}
-          {!installed && installPrompt ? (
-            <button
-              type="button"
-              className="mobile-dock-link mobile-dock-link--button"
-              onClick={() => void handleInstall()}
-            >
-              Install
-            </button>
-          ) : null}
         </nav>
       ) : null}
     </div>
@@ -229,7 +232,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta charSet="utf-8" />
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, viewport-fit=cover"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
         <meta name="theme-color" content="#2f7a59" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
