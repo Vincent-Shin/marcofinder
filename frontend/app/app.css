@@ -1660,7 +1660,7 @@ pre {
   }
 
   .rail {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .restaurant-rail {
@@ -2043,7 +2043,7 @@ pre {
   }
 
   .rail {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-restaurant-list {
@@ -2056,6 +2056,24 @@ pre {
 
   .list-metrics {
     justify-items: start;
+  }
+
+  .rail .macro-row {
+    gap: 6px;
+  }
+
+  .rail .macro-row span {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+  }
+
+  .rail .card-main h3 {
+    font-size: 0.92rem;
+    line-height: 1.22;
+  }
+
+  .rail .list-description {
+    display: none;
   }
 }
 
@@ -2419,5 +2437,9 @@ pre {
   .restaurant-rail .restaurant-tile {
     flex-basis: min(86vw, 248px);
     min-width: min(86vw, 248px);
+  }
+
+  .rail {
+    grid-template-columns: 1fr;
   }
 }

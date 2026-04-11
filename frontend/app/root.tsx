@@ -40,7 +40,7 @@ type BeforeInstallPromptEvent = Event & {
 function Shell() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, compareKeys } = useAppState();
+  const { user } = useAppState();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(
     null,
@@ -150,7 +150,7 @@ function Shell() {
             <div className="top-actions">
               {user ? (
                 <Link to="/profile" className="top-tab top-tab--user top-tab--mobile-profile">
-                  {user.name}
+                  Profile
                 </Link>
               ) : (
                 <>
@@ -194,9 +194,6 @@ function Shell() {
           </NavLink>
           <NavLink to="/compare" className="mobile-dock-link">
             Compare
-            {compareKeys.length ? (
-              <span className="mobile-dock-count">{compareKeys.length}</span>
-            ) : null}
           </NavLink>
           <NavLink to="/admin" className="mobile-dock-link">
             Manage
