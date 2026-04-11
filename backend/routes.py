@@ -13,7 +13,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 from ai_helper import generate_category_and_description
-from db import item_issues, menu_items, password_resets, restaurants, submissions, users
+from db import (
+    DatabaseUnavailableError,
+    database_status,
+    item_issues,
+    menu_items,
+    password_resets,
+    restaurants,
+    submissions,
+    users,
+)
 
 api = Blueprint("api", __name__)
 
@@ -38,6 +47,21 @@ ISSUE_TYPE_ALLOWLIST = {
     "other",
 }
 ISSUE_STATUS_ALLOWLIST = {"open", "in_review", "resolved", "dismissed"}
+
+
+@api.app_errorhandler(DatabaseUnavailableError)
+def handle_database_unavailable(error):
+    payload = database_status()
+    return (
+        jsonify(
+            {
+                "error": "database unavailable",
+                "details": str(error),
+                "database": payload,
+            }
+        ),
+        503,
+    )
 
 
 def normalize_email(value):
@@ -424,7 +448,9 @@ def find_restaurant_record(restaurant_id):
 
 @api.get("/health")
 def health():
-    return {"status": "ok"}
+    payload = database_status()
+    status_code = 200 if payload["status"] == "connected" else 503
+    return {"status": "ok", "database": payload}, status_code
 
 
 @api.post("/uploads")

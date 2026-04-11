@@ -10,10 +10,19 @@ import type {
   UserRecord,
 } from "./types";
 
+function resolveDevApiBaseUrl() {
+  if (typeof window === "undefined") {
+    return "http://127.0.0.1:5000";
+  }
+
+  const hostname = window.location.hostname || "127.0.0.1";
+  return `http://${hostname}:5000`;
+}
+
 const API_BASE_URL =
   (typeof window !== "undefined" && window.localStorage.getItem("macrofinder_api_base")) ||
   import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? "http://127.0.0.1:5000" : "/api");
+  (import.meta.env.DEV ? resolveDevApiBaseUrl() : "/api");
 
 type AuthEnvelope = {
   message?: string;
